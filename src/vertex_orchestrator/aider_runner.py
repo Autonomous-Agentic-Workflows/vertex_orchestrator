@@ -82,12 +82,48 @@ class AiderRunner:
     def _default_backend(self, file_path: str, edit_instruction: str, model_string: str) -> str:
         """Production backend using real Aider CLI. Requires aider-chat installed."""
         import subprocess
+        import sys
+        import os
+        from pathlib import Path
+
+        # Find the aider executable — try venv first, then PATH
+        aider_cmd = None
+        venv_scripts = Path(sys.prefix) / "Scripts"
+        if venv_scripts.exists():
+            # On Windows, try aider.exe; on Unix, try aider
+            for name in ("aider.exe", "aider"):
+                aider_exe = venv_scripts / name
+                if aider_exe.exists():
+                    aider_cmd = str(aider_exe)
+                    break
+        if not aider_cmd:
+            aider_cmd = "aider"  # fall back to PATH
+
+        # Aider expects "vertex_ai/model-name" but our model_string already has
+        # the vertex_ai/ prefix from config. Strip it if double-prefixed.
+        model = model_string
+        if model.startswith("vertex_ai/vertex_ai/"):
+            model = model.replace("vertex_ai/vertex_ai/", "vertex_ai/")
+
+        # Set Vertex AI env vars from config
+        env = os.environ.copy()
+        if not env.get("VERTEXAI_PROJECT"):
+            env["VERTEXAI_PROJECT"] = self.config.project_id
+        if not env.get("VERTEXAI_LOCATION"):
+            env["VERTEXAI_LOCATION"] = self.config.location
 
         cmd = [
-            "aider",
-            "--model", model_string,
+            aider_cmd,
+            "--model", model,
             "--message", edit_instruction,
+            "--yes",  # auto-accept edits
+            "--no-auto-commits",  # don't commit, just edit
+            "--no-gitignore",  # skip gitignore check
+            "--no-show-model-warnings",  # suppress model warnings
             file_path,
         ]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        return result.stdout
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, check=True, env=env,
+            cwd=os.path.dirname(os.path.abspath(file_path)) or "."
+        )
+        return result.stdout if result.stdout else "Edit applied successfully"

@@ -34,8 +34,8 @@ class AutoGenRunner:
 
     The ``backend`` parameter on ``run()`` allows injecting a real AutoGen
     AssistantAgent + UserProxyAgent interaction or a test double. In
-    production, the default backend constructs AutoGen agents with the
-    Vertex AI config and initiates the conversation.
+    production, the default backend uses litellm (the same engine AutoGen
+    and CrewAI use internally) to route through Vertex AI.
     """
 
     def __init__(
@@ -71,29 +71,31 @@ class AutoGenRunner:
     def _default_backend(
         self, system_message: str, message: Union[str, list], config_entry: dict
     ) -> str:
-        """Production backend using real AutoGen. Requires pyautogen installed."""
-        try:
-            import autogen  # type: ignore[import-untyped]
-        except ImportError:
-            try:
-                from autogen_agentchat import AssistantAgent, UserProxyAgent  # type: ignore[import-untyped]
-                from autogen_core import CancellationToken  # type: ignore[import-untyped]
-            except ImportError as exc:
-                raise ImportError(
-                    "pyautogen is not installed. Install with: pip install pyautogen"
-                ) from exc
+        """Production backend using litellm for Vertex AI access.
 
-        config_list = [config_entry]
-        assistant = autogen.AssistantAgent(
-            name="Vertex_Agent",
-            llm_config={"config_list": config_list},
-            system_message=system_message,
+        AutoGen 0.7+ uses litellm internally for model calls. We use the
+        same litellm engine to route through Vertex AI with ADC credentials,
+        which provides the same enterprise IP protection.
+        """
+        try:
+            import litellm  # type: ignore[import-untyped]
+        except ImportError as exc:
+            raise ImportError(
+                "litellm is not installed. Install with: pip install litellm"
+            ) from exc
+
+        model_name = config_entry.get("model", "gemini-2.5-pro")
+        messages_list = message if isinstance(message, list) else [message]
+
+        # Build the message list for litellm
+        messages = [{"role": "system", "content": system_message}]
+        for msg in messages_list:
+            messages.append({"role": "user", "content": msg})
+
+        response = litellm.completion(
+            model=f"vertex_ai/{model_name}",
+            messages=messages,
+            temperature=self.config.temperature,
+            max_tokens=2048,
         )
-        user_proxy = autogen.UserProxyAgent(
-            name="User",
-            human_input_mode="NEVER",
-            max_consecutive_auto_reply=0,
-        )
-        messages = message if isinstance(message, list) else [message]
-        user_proxy.initiate_chat(assistant, message=messages[0])
-        return str(user_proxy.last_message()["content"])
+        return response.choices[0].message.content

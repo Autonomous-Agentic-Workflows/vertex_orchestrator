@@ -64,7 +64,7 @@ class CrewAIRunner:
     def _default_backend(self, task: str, model_string: str, temperature: float) -> str:
         """Production backend using real CrewAI. Requires crewai installed."""
         try:
-            from crewai import Agent, Crew, LLM  # type: ignore[import-untyped]
+            from crewai import Agent, Crew, LLM, Task  # type: ignore[import-untyped]
         except ImportError as exc:
             raise ImportError(
                 "crewai is not installed. Install with: pip install crewai"
@@ -78,5 +78,6 @@ class CrewAIRunner:
             llm=llm,
             verbose=True,
         )
-        crew = Crew(agents=[agent], tasks=[task])  # type: ignore[arg-type]
+        crew_task = Task(description=task, expected_output="A clear response to the task.", agent=agent)
+        crew = Crew(agents=[agent], tasks=[crew_task])
         return str(crew.kickoff())
