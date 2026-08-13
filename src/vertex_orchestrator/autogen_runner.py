@@ -74,10 +74,14 @@ class AutoGenRunner:
         """Production backend using real AutoGen. Requires pyautogen installed."""
         try:
             import autogen  # type: ignore[import-untyped]
-        except ImportError as exc:
-            raise ImportError(
-                "pyautogen is not installed. Install with: pip install pyautogen"
-            ) from exc
+        except ImportError:
+            try:
+                from autogen_agentchat import AssistantAgent, UserProxyAgent  # type: ignore[import-untyped]
+                from autogen_core import CancellationToken  # type: ignore[import-untyped]
+            except ImportError as exc:
+                raise ImportError(
+                    "pyautogen is not installed. Install with: pip install pyautogen"
+                ) from exc
 
         config_list = [config_entry]
         assistant = autogen.AssistantAgent(
