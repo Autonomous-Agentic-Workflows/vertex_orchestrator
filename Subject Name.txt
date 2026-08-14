@@ -1,0 +1,264 @@
+Subject Name
+Common Name
+mail.qmx.jhy.mybluehost.me
+Issuer Name
+Country
+US
+Organization
+Let's Encrypt
+Common Name
+YR2
+Validity
+Not Before
+Tue, 11 Aug 2026 13:05:01 GMT
+Not After
+Mon, 09 Nov 2026 13:05:00 GMT
+Subject Alt Names
+DNS Name
+autoconfig.qmx.jhy.mybluehost.me
+DNS Name
+autodiscover.qmx.jhy.mybluehost.me
+DNS Name
+cpanel.qmx.jhy.mybluehost.me
+DNS Name
+cpcalendars.qmx.jhy.mybluehost.me
+DNS Name
+cpcontacts.qmx.jhy.mybluehost.me
+DNS Name
+mail.qmx.jhy.mybluehost.me
+DNS Name
+qmx.jhy.mybluehost.me
+DNS Name
+webdisk.qmx.jhy.mybluehost.me
+DNS Name
+webmail.qmx.jhy.mybluehost.me
+DNS Name
+www.qmx.jhy.mybluehost.me
+Public Key Info
+Algorithm
+RSA
+Key Size
+2048
+Exponent
+65537
+Modulus
+A4:92:77:E4:E7:50:35:94:0E:E7:B2:6B:D6:1C:A9:1E:3B:1B:93:D6:55:3D:4B:7B:65:28:67:A6:B4:31:3D:61:75:CB:6B:5B:51:12:3F:3B:E6:ED:EA:EA:4F:05:C1:6E:77:02:E6:64:57:83:B2:73:9C:40:57:67:B4:98:1E:76:07:12:98:F0:4B:95:99:FC:49:0E:8C:8D:74:FB:48:47:92:BC:25:4D:41:3A:0D:9A:04:28:FD:E6:38:F0:09:05:1A:C0:58:8C:2A:61:AC:7F:3B:38:F7:A0:CF:02:58:69:1E:A4:C1:2D:78:03:00:5B:0B:20:A0:C9:E7:65:65:80:FD:BB:72:AC:06:B6:9F:8C:B3:96:4A:6A:99:63:30:B7:82:AD:56:B9:F9:71:25:EF:B4:D9:14:A5:97:45:F7:A2:24:9B:B3:39:D9:59:A8:AD:96:62:12:F4:77:98:B4:0B:82:DF:0D:5A:45:3B:86:90:52:19:97:A5:98:37:8A:76:B3:9C:7D:86:78:D7:C1:36:4E:1A:EC:2A:87:D1:CC:5D:B4:00:30:9D:FD:25:A9:18:9B:AD:5C:4D:A8:DB:5D:F5:D4:F2:FE:45:B1:CA:CA:E8:34:10:8F:A2:79:A7:EE:B6:E1:5E:51:1E:CE:68:88:9B:A5:02:30:6E:2B:16:B5:55
+Miscellaneous
+Serial Number
+06:09:E7:74:C0:61:2F:24:11:47:E7:B1:78:37:13:33:30:55
+Signature Algorithm
+SHA-256 with RSA Encryption
+Version
+3
+Download
+PEM (cert)PEM (chain)
+Fingerprints
+SHA-256
+CA:D5:AF:00:A0:2B:ED:45:9D:FF:C1:DD:F8:D4:C1:DC:95:AF:6F:88:3A:D2:0E:C1:80:DF:C1:3D:A2:2E:6F:E1
+SHA-1
+8F:79:43:6E:2B:D7:1D:B7:31:43:83:70:6D:CE:5C:07:6B:36:F5:34
+[This extension has been marked as critical, meaning that clients must reject the certificate if they do not understand it.]
+Basic Constraints
+Certificate Authority
+No
+[This extension has been marked as critical, meaning that clients must reject the certificate if they do not understand it.]
+Key Usages
+Purposes
+Digital Signature, Key Encipherment
+Extended Key Usages
+Purposes
+Server Authentication
+Subject Key ID
+Key ID
+9B:E8:47:8D:E2:3D:64:16:4C:3A:96:DD:BC:C6:55:EC:DA:CB:00:7C
+Authority Key ID
+Key ID
+40:15:2D:26:79:ED:32:20:9E:DF:9A:72:1D:D6:32:1F:81:0C:81:0C
+CRL Endpoints
+Distribution Point
+http://yr2.c.lencr.org/86.crl
+Authority Info (AIA)
+Location
+http://yr2.i.lencr.org/
+Method
+CA Issuers
+Certificate Policies
+Policy
+Certificate Type ( 2.23.140.1.2.1 )
+Value
+Domain Validation
+Embedded SCTs
+Log Name
+IPng Networks 'Halloumi2026h2a'
+Log ID
+26:E3:64:6E:58:69:21:23:BC:34:3F:47:24:35:9B:37:92:CD:24:5A:88:D8:15:D3:93:33:FD:99:18:AB:47:23
+Signature Algorithm
+SHA-256 ECDSA
+Version
+1
+Timestamp
+Tue, 11 Aug 2026 14:03:30 GMT
+Log Name
+Sectigo 'Elephant2026h2'
+Log ID
+AF:67:88:3B:57:B0:4E:DD:8F:A6:D9:7E:F6:2E:A8:EB:81:0A:C7:71:60:F0:24:5E:55:D6:0C:2F:E7:85:87:3A
+Signature Algorithm
+SHA-256 ECDSA
+Version
+1
+Timestamp
+Tue, 11 Aug 2026 14:03:31 GMT 
+
+================================
+
+Subject Name
+Country
+US
+Organization
+Let's Encrypt
+Common Name
+YR2
+Issuer Name
+Country
+US
+Organization
+ISRG
+Common Name
+Root YR
+Validity
+Not Before
+Wed, 03 Sep 2025 00:00:00 GMT
+Not After
+Sat, 02 Sep 2028 23:59:59 GMT
+Public Key Info
+Algorithm
+RSA
+Key Size
+2048
+Exponent
+65537
+Modulus
+D9:D0:BC:70:06:9A:6A:87:CE:25:BA:A3:1E:AD:5F:DE:78:BF:DF:5D:0E:E6:2D:04:2F:D4:B9:E9:58:A6:5B:CA:F1:A9:C7:AC:21:E8:07:E7:B2:50:27:17:A7:B0:4E:47:07:03:E8:12:3A:80:6F:9B:70:DF:9B:4E:80:B8:68:85:F8:A4:6E:B7:87:C0:72:8C:2A:9C:04:10:09:6F:7C:F9:03:CF:FD:E3:AF:FF:0B:A0:EC:8C:A4:E0:D9:0E:C5:FD:88:EA:0D:9F:E7:94:FA:9C:9A:0E:4C:B1:5C:BA:47:91:AB:CD:09:19:01:18:6A:7F:9D:3C:5A:FD:38:65:20:40:AD:A1:18:A8:0D:91:6F:3B:A5:AA:69:B0:E0:2E:50:97:2B:A1:88:51:B7:9B:94:8A:CE:2A:69:98:AB:7A:2B:1E:BB:7D:A0:CC:32:4D:04:08:8A:B6:CB:DD:E8:75:F8:BF:6E:5B:A6:44:4D:71:2F:C1:FC:6B:5C:F6:45:5B:52:90:FE:D8:F2:CF:C5:D7:A2:DD:38:A6:E7:99:38:B5:F0:04:5F:00:F6:AB:28:8F:4F:1A:D3:36:AE:A5:37:E0:0C:AF:98:36:73:57:4D:AA:43:93:C2:3C:5E:57:A2:F9:96:93:F5:AC:68:98:BC:B9:D1:68:F9:4E:AB:26:51:3D:6F:B9
+Miscellaneous
+Serial Number
+4E:BD:24:94:7E:24:D3:94:80:2D:84:A5:2F:D5:B3:19
+Signature Algorithm
+SHA-256 with RSA Encryption
+Version
+3
+Download
+PEM (cert)PEM (chain)
+Fingerprints
+SHA-256
+23:8B:85:A0:09:9C:65:B9:70:47:7D:57:24:F1:A1:D4:75:CE:50:58:CF:FE:4E:FA:87:33:89:9B:DB:86:3C:47
+SHA-1
+2D:74:D6:DF:D9:6E:EA:55:AD:7B:AA:FA:0D:3C:65:52:B2:DA:DC:37
+[This extension has been marked as critical, meaning that clients must reject the certificate if they do not understand it.]
+Basic Constraints
+Certificate Authority
+Yes
+[This extension has been marked as critical, meaning that clients must reject the certificate if they do not understand it.]
+Key Usages
+Purposes
+Digital Signature, Certificate Signing, CRL Signing
+Extended Key Usages
+Purposes
+Server Authentication
+Subject Key ID
+Key ID
+40:15:2D:26:79:ED:32:20:9E:DF:9A:72:1D:D6:32:1F:81:0C:81:0C
+Authority Key ID
+Key ID
+DE:E7:5B:60:D0:22:6D:40:28:7D:3F:0D:01:FE:A4:B5:52:B4:51:94
+CRL Endpoints
+Distribution Point
+http://yr.c.lencr.org/
+Authority Info (AIA)
+Location
+http://yr.i.lencr.org/
+Method
+CA Issuers
+Certificate Policies
+Policy
+Certificate Type ( 2.23.140.1.2.1 )
+Value
+Domain Validation 
+
+===============
+
+Subject Name
+Country
+US
+Organization
+ISRG
+Common Name
+Root YR
+Issuer Name
+Country
+US
+Organization
+Internet Security Research Group
+Common Name
+ISRG Root X1
+Validity
+Not Before
+Wed, 13 May 2026 00:00:00 GMT
+Not After
+Thu, 02 Sep 2032 23:59:59 GMT
+Public Key Info
+Algorithm
+RSA
+Key Size
+4096
+Exponent
+65537
+Modulus
+DB:C6:26:73:7B:F0:24:C9:75:62:F7:F9:E1:9F:B0:B3:79:4E:B3:41:26:CF:95:1F:D8:51:5E:A4:5B:C3:1B:BD:B0:63:62:07:40:43:D5:F7:0E:C5:B4:94:40:22:48:33:5C:44:D7:70:DB:FB:90:B0:D7:0D:2C:D0:40:58:B2:FB:88:3F:FE:A3:A0:5D:30:F1:CB:88:99:B8:11:D4:E1:A0:61:B4:90:E0:EA:73:23:E0:C6:F1:21:AE:4E:57:04:F3:BD:CE:09:2F:A4:87:7B:2B:96:8E:AF:97:8D:CC:E4:E2:60:E0:07:A8:D6:C7:C7:A7:A9:13:24:3A:08:88:50:4D:24:06:3E:38:A7:D7:FC:55:2F:60:AB:A1:8D:3F:A7:A3:8F:65:9A:A9:AE:A5:20:48:E4:F9:01:42:2A:AB:10:6B:56:53:9B:B1:53:F7:10:58:71:AE:F2:34:A3:14:1C:E7:66:AB:DB:34:F2:CC:5C:C2:C5:C4:26:F7:59:37:EB:24:15:D7:8E:AB:D6:1B:EB:F8:6E:3C:F1:8E:37:80:B4:E9:54:EE:A6:AB:44:3B:CD:3B:20:2E:41:82:E5:9F:DD:38:33:E7:DA:2B:1F:21:9C:B0:A9:27:5E:59:A9:A1:20:70:D9:58:FB:D3:0C:59:C0:B9:CA:F2:F6:03:68:F7:97:DF:B6:6E:E8:20:65:7F:9D:38:4F:75:CD:89:88:75:AC:13:BD:26:6E:56:F9:5B:46:B0:25:2F:12:01:EA:9C:0C:06:39:DE:5C:28:D8:43:CF:B7:04:20:A3:B2:C6:D2:36:96:54:DE:14:DC:04:37:61:7C:09:44:0E:56:2B:EA:91:1A:B6:73:1D:98:34:F9:06:A9:CA:0B:DD:9B:77:41:21:33:57:DB:2C:78:A8:2D:C7:0B:0A:E8:9E:BD:3F:19:90:F8:59:AE:AE:CC:8A:2E:E0:35:70:1C:50:40:11:F3:E9:73:61:A9:7E:F7:34:E0:EC:2E:43:00:BC:95:39:E1:BF:0A:A7:D1:00:C9:F5:29:21:C2:47:43:52:03:A3:FC:B6:7F:E6:19:19:67:09:CB:79:AE:D5:42:2E:75:72:49:5A:54:E8:7D:6A:1A:0D:C3:81:33:AE:B2:47:FC:79:A8:53:32:26:1B:23:97:B3:3C:99:8E:E5:EA:ED:6A:5B:24:43:5B:AD:A7:BE:3E:78:3C:BD:D8:F2:38:7E:D1:CA:4D:BA:BD:21:68:47:E1:86:4A:87:75:A7:24:42:2D:FA:84:2F:95:86:5B:63:CB:69:12:BA:0A:AC:50:7A:3C:51:B3:AC:92:03:47:2B:6C:E0:7A:AF:B8:7E:76:44:58:F6:CE:FF:C1
+Miscellaneous
+Serial Number
+00:F2:4B:6D:17:F9:D9:AD:7C:B1:C9:FE:A7:87:82:69:9F
+Signature Algorithm
+SHA-256 with RSA Encryption
+Version
+3
+Download
+PEM (cert)PEM (chain)
+Fingerprints
+SHA-256
+07:26:39:D0:B1:40:D5:BF:FA:E1:6A:D9:C3:F6:CC:60:86:04:06:21:F5:1E:E6:1A:6D:46:A8:91:5C:07:CF:76
+SHA-1
+AB:9D:02:63:24:4D:D0:32:6E:B6:70:15:70:5A:66:7E:79:CF:E9:98
+[This extension has been marked as critical, meaning that clients must reject the certificate if they do not understand it.]
+Basic Constraints
+Certificate Authority
+Yes
+[This extension has been marked as critical, meaning that clients must reject the certificate if they do not understand it.]
+Key Usages
+Purposes
+Certificate Signing, CRL Signing
+Extended Key Usages
+Purposes
+Server Authentication
+Subject Key ID
+Key ID
+DE:E7:5B:60:D0:22:6D:40:28:7D:3F:0D:01:FE:A4:B5:52:B4:51:94
+Authority Key ID
+Key ID
+79:B4:59:E6:7B:B6:E5:E4:01:73:80:08:88:C8:1A:58:F6:E9:9B:6E
+CRL Endpoints
+Distribution Point
+http://x1.c.lencr.org/
+Authority Info (AIA)
+Location
+http://x1.i.lencr.org/
+Method
+CA Issuers
+Certificate Policies
+Policy
+Certificate Type ( 2.23.140.1.2.1 )
+Value
+Domain Validation
+
+=================================================
+
+WTF

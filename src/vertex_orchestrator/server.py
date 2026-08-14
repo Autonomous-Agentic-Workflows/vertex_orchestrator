@@ -36,6 +36,14 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _check_auth(self) -> bool:
+        """Check API key auth. Returns True if authorized or no key configured."""
+        api_key = os.environ.get("ORCHESTRATOR_API_KEY", "")
+        if not api_key:
+            return True  # No key set = open (local dev only)
+        auth = self.headers.get("Authorization", "")
+        return auth == f"Bearer {api_key}"
+
     def _read_body(self) -> dict:
         length = int(self.headers.get("Content-Length", 0))
         if length == 0:
@@ -94,6 +102,11 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
         orch = Orchestrator(config=config)
 
         if path == "/execute":
+            # Auth check
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+
             task_type_str = body.get("task_type", "ANALYSIS").upper()
             try:
                 task_type = TaskType[task_type_str]
@@ -110,7 +123,23 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             if "system_message" in body:
                 kwargs["system_message"] = body["system_message"]
             if "file_path" in body:
-                kwargs["file_path"] = body["file_path"]
+                # Security: restrict file_path to ConsolidatedDevelopment only
+                file_path = body["file_path"]
+                allowed_base = os.environ.get("ORCHESTRATOR_ALLOWED_BASE", "")
+                if not allowed_base:
+                    # Default to ConsolidatedDevelopment
+                    home = os.environ.get("USERPROFILE", os.environ.get("HOME", ""))
+                    allowed_base = os.path.join(home, "OneDrive", "ConsolidatedDevelopment")
+                # Normalize both paths for comparison
+                norm_file = os.path.normpath(os.path.abspath(file_path))
+                norm_base = os.path.normpath(os.path.abspath(allowed_base))
+                if not norm_file.startswith(norm_base):
+                    self._send_json(403, {
+                        "success": False,
+                        "error": f"file_path must be within {norm_base}"
+                    })
+                    return
+                kwargs["file_path"] = file_path
 
             result = orch.execute(task_type=task_type, task=task, **kwargs)
 
@@ -122,6 +151,11 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             })
 
         elif path == "/batch":
+            # Auth check
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+
             tasks = body.get("tasks", [])
             if not tasks:
                 self._send_json(400, {"success": False, "error": "tasks list is required"})
@@ -141,6 +175,49 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
                 ],
             })
 
+        elif path == "/recovery/status":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.recovery import RecoveryIntegration
+            home = os.environ.get("USERPROFILE", os.environ.get("HOME", ""))
+            recovery_repo = os.path.join(home, "OneDrive", "ConsolidatedDevelopment", "MasterRecovery3")
+            ri = RecoveryIntegration(config=config, recovery_repo_path=recovery_repo)
+            report = ri.full_status_report()
+            self._send_json(200, {"success": True, "report": report})
+
+        elif path == "/recovery/analyze-seeds":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.recovery import RecoveryIntegration
+            home = os.environ.get("USERPROFILE", os.environ.get("HOME", ""))
+            recovery_repo = os.path.join(home, "OneDrive", "ConsolidatedDevelopment", "MasterRecovery3")
+            ri = RecoveryIntegration(config=config, recovery_repo_path=recovery_repo)
+            seed_info = body.get("seed_info", {})
+            result = ri.analyze_seed_paths(seed_info)
+            self._send_json(200, result)
+
+        elif path == "/recovery/passphrases":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.recovery import RecoveryIntegration
+            ri = RecoveryIntegration(config=config, recovery_repo_path=".")
+            base_passphrases = body.get("passphrases", [])
+            result = ri.generate_passphrase_variants(base_passphrases)
+            self._send_json(200, result)
+
+        elif path == "/recovery/analyze-log":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.recovery import RecoveryIntegration
+            ri = RecoveryIntegration(config=config, recovery_repo_path=".")
+            log_path = body.get("log_path", "")
+            result = ri.analyze_scanner_log(log_path)
+            self._send_json(200, result)
+
         else:
             self._send_json(404, {"error": "not found"})
 
@@ -150,7 +227,9 @@ def run_server(host: str = "0.0.0.0", port: int = 8000) -> None:
     server = HTTPServer((host, port), OrchestratorHandler)
     print(f"Vertex Orchestrator backend running on http://{host}:{port}")
     print(f"  Project: {os.environ.get('GOOGLE_CLOUD_PROJECT', 'NOT SET')}")
-    print(f"  Endpoints: /health, /execute, /batch, /providers")
+    print(f"  Auth: {'ENABLED (ORCHESTRATOR_API_KEY set)' if os.environ.get('ORCHESTRATOR_API_KEY') else 'OPEN (no key set — local dev only)'}")
+    print(f"  File access: restricted to {os.environ.get('ORCHESTRATOR_ALLOWED_BASE', '<ConsolidatedDevelopment>')}")
+    print(f"  Endpoints: /health, /execute, /batch, /providers, /recovery/*")
     print(f"  Press Ctrl+C to stop")
     try:
         server.serve_forever()

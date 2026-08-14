@@ -1,0 +1,9 @@
+admin@208fenceandgate.com is requesting the role roles/resourcemanager.projectMover on the resource autonomous-agents.
+
+Requestor’s message:
+"pretty plssss mate
+"
+
+Click the following link to investigate and remediate this request for admin@208fenceandgate.com:
+
+console.cloud.google.com/iam-admin/troubleshooter/summary;permissions=resourcemanager.projects.get;token=AZRajuUZ7AjcfsrlpMHKSPUTC8fRmI7qigA5qaNn2B57iFQZDKSBabnx0Zlg4umJz90bB5EZacEKTa9WXD13i7CFR0ZaI7Nl8p2RkPApdqUzmOM0wz_5dEQ1-3pcOyAFiTBqF5G3AutqUqhrFg-dtEPfV7fPEuEQ25Nts5HMEOV-BD2S7q9Wpusrig?utm_campaign=role_request&utm_source=cloud_console
