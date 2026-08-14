@@ -181,7 +181,10 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
                 return
             from vertex_orchestrator.recovery import RecoveryIntegration
             home = os.environ.get("USERPROFILE", os.environ.get("HOME", ""))
-            recovery_repo = os.path.join(home, "OneDrive", "ConsolidatedDevelopment", "MasterRecovery3")
+            # Try MasterRecovery3 first, then MasterRecovery2 in FoundRepos
+            mr3 = os.path.join(home, "OneDrive", "ConsolidatedDevelopment", "MasterRecovery3")
+            mr2 = os.path.join(home, "Documents", "JayLang085MR4", "OneDrive", "ConsolidatedDevelopment", "FoundRepos", "MasterRecovery2")
+            recovery_repo = mr3 if os.path.exists(mr3) else mr2
             ri = RecoveryIntegration(config=config, recovery_repo_path=recovery_repo)
             report = ri.full_status_report()
             self._send_json(200, {"success": True, "report": report})
@@ -192,7 +195,10 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
                 return
             from vertex_orchestrator.recovery import RecoveryIntegration
             home = os.environ.get("USERPROFILE", os.environ.get("HOME", ""))
-            recovery_repo = os.path.join(home, "OneDrive", "ConsolidatedDevelopment", "MasterRecovery3")
+            # Try MasterRecovery3 first, then MasterRecovery2 in FoundRepos
+            mr3 = os.path.join(home, "OneDrive", "ConsolidatedDevelopment", "MasterRecovery3")
+            mr2 = os.path.join(home, "Documents", "JayLang085MR4", "OneDrive", "ConsolidatedDevelopment", "FoundRepos", "MasterRecovery2")
+            recovery_repo = mr3 if os.path.exists(mr3) else mr2
             ri = RecoveryIntegration(config=config, recovery_repo_path=recovery_repo)
             seed_info = body.get("seed_info", {})
             result = ri.analyze_seed_paths(seed_info)

@@ -269,15 +269,26 @@ class RecoveryIntegration:
             "checks": {},
         }
 
-        # Check if recovery config exists
+        # Check if recovery config exists — try MR3 first, then MR2
         config_path = self.recovery_repo / "config" / "recovery.json"
+        if not config_path.exists():
+            home = os.environ.get("USERPROFILE", os.environ.get("HOME", ""))
+            mr2_config = Path(home) / "Documents" / "JayLang085MR4" / "OneDrive" / "ConsolidatedDevelopment" / "FoundRepos" / "MasterRecovery2" / "config" / "recovery.json"
+            if mr2_config.exists():
+                config_path = mr2_config
         if config_path.exists():
             report["checks"]["config_validation"] = self.validate_recovery_config(str(config_path))
         else:
             report["checks"]["config_validation"] = {"success": False, "error": "recovery.json not found"}
 
-        # Check scanner log
+        # Check scanner log — try MasterRecovery2 first (has live data), then MR3
         log_path = self.recovery_repo / "jarvis" / "mega_scanner.log"
+        if not log_path.exists():
+            # Try MR2 in FoundRepos
+            home = os.environ.get("USERPROFILE", os.environ.get("HOME", ""))
+            mr2_log = Path(home) / "Documents" / "JayLang085MR4" / "OneDrive" / "ConsolidatedDevelopment" / "FoundRepos" / "MasterRecovery2" / "jarvis" / "mega_scanner.log"
+            if mr2_log.exists():
+                log_path = mr2_log
         if log_path.exists():
             report["checks"]["log_analysis"] = self.analyze_scanner_log(str(log_path))
         else:

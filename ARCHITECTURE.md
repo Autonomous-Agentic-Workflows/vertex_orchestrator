@@ -2,155 +2,91 @@
 
 ## What it is
 
-A Python backend exposing three agent frameworks over one REST API:
+A Python backend exposing three agent frameworks over one REST API, now integrated with the crypto recovery operation.
 
 | Task | Routed to | What it does |
 |------|-----------|-------------|
-| ANALYSIS | CrewAI | Structured analysis, auditing |
-| CONVERSATION | AutoGen | Multi-agent dialogue (via litellm) |
-| EDIT | Aider | Direct file editing on a target path |
+| ANALYSIS | CrewAI | Structured analysis, auditing, recovery config validation |
+| CONVERSATION | AutoGen | Multi-agent dialogue, passphrase generation (via litellm) |
+| EDIT | Aider | Direct file editing on a target path (restricted to ConsolidatedDevelopment) |
 
 All three talk to Google Vertex AI (gemini-2.5-pro / gemini-2.5-flash in us-central1), via `GOOGLE_CLOUD_PROJECT` env var and ADC credentials.
 
 ## HTTP server
 
 - Binds to `0.0.0.0:8000` — all interfaces
-- Endpoints: `GET /health`, `GET /providers`, `POST /execute`, `POST /batch`
 - **Auth**: API key via `ORCHESTRATOR_API_KEY` env var. If set, POST endpoints require `Authorization: Bearer <key>`. If not set, runs open (local dev only).
-- **File access**: `EDIT` task `file_path` is restricted to `ConsolidatedDevelopment/` directory. Override with `ORCHESTRATOR_ALLOWED_BASE` env var. Paths outside get 403.
+- **File access**: `EDIT` task `file_path` restricted to `ConsolidatedDevelopment/` directory. Paths outside get 403.
 - CORS: `Access-Control-Allow-Origin: *` (for Android app bridge)
-- Caller can override `model` and `task_type` per request
-- GCP credentials come from `gcloud auth application-default login`
+
+### Endpoints
+
+| Endpoint | Method | Auth | Purpose |
+|----------|--------|------|---------|
+| /health | GET | No | Health check, lists providers + project |
+| /providers | GET | No | List available agent frameworks + models |
+| /execute | POST | Yes | Execute single task (ANALYSIS/CONVERSATION/EDIT) |
+| /batch | POST | Yes | Execute multiple tasks in sequence |
+| /recovery/status | POST | Yes | Full recovery report (config validation + log analysis) |
+| /recovery/analyze-seeds | POST | Yes | AI analysis of seed derivation paths, suggests missed paths |
+| /recovery/passphrases | POST | Yes | AI-generated passphrase variations |
+| /recovery/analyze-log | POST | Yes | Parse scanner logs for patterns, hits, errors |
+
+## Recovery Integration
+
+The `recovery.py` module bridges Hermes with MasterRecovery3:
+
+- **RecoveryIntegration** class at `src/vertex_orchestrator/recovery.py`
+- Sanitizes all sensitive data (seeds, WIF keys, passphrases) before sending to AI
+- Routes through CrewAI -> litellm -> Vertex AI (gemini-2.5-flash)
+- AI validates recovery.json, analyzes seed paths, generates passphrase variants, parses scanner logs
+
+### Key AI Findings (2026-08-13)
+
+1. **Change addresses NOT scanned** — scanner only tried external chain (CHAIN_EXT). Fixed: now also scans CHAIN_INT (change addresses). Pushed to AAW/MasterRecovery3.
+2. **Invalid seed words** — SEED_D "sumer"→"summer", SEED_P "Human"→"human"
+3. **Electrum legacy paths** — m/0/i and m/1/i not tried
+4. **BIP84 paths** — were scanned but only external chain
+5. **Index depth** — should increase from 200 to 250+
 
 ## Security posture
 
 | Risk | Status |
 |------|--------|
-| No auth on /execute and /batch | **Fixed** — ORCHESTRATOR_API_KEY required |
+| No auth on endpoints | **Fixed** — ORCHESTRATOR_API_KEY required |
 | Arbitrary file_path on EDIT | **Fixed** — restricted to ConsolidatedDevelopment |
 | CORS wide-open | Intentional — Android app needs cross-origin |
-| GCP project override in body | Accepted — project_id comes from env, not body |
-| master-recovery-hub-2026 GCP project | Enterprise project, ADC-secured |
-| Exposed GitHub PAT in MCP config | **Fixed** — rotated to new PAT, tokens via env vars |
-| GDPR compliance | Documented — DPIA required for AI agent deployment |
+| Sensitive data to AI | **Mitigated** — recovery.py sanitizes seeds/keys before AI calls |
 
 ## Git multi-account wiring
 
-| GitHub org | Name on commits | Email | Role |
-|------------|-----------------|-------|------|
-| yajlang | Conor Gold | admin@208fenceandgate.com | Personal (primary) |
-| conor-ops | Conor Gomes | admin@208fenceandgate.com | Personal/work |
-| Autonomous-Agentic-Workflows | Conor Gold | admin@208fenceandgate.com | Enterprise org |
-| 3rdIteration | (external) | — | External fork |
+| GitHub org | Name on commits | Role | Repos |
+|------------|-----------------|------|-------|
+| Autonomous-Agentic-Workflows | Conor Gold | Enterprise org (primary) | 34 active + 26 archived |
+| conor-ops | Conor Gomes | Personal/work | 7 repos |
+| yajlang | Conor Gold | Personal | 13 remaining unique repos |
+| 3rdIteration | (external) | External fork | btcrecover |
 
-Note: 208DevOps org exists under the 208developeroperations enterprise but is inaccessible via API. All repos were migrated to Autonomous-Agentic-Workflows.
+Tokens: yajlang classic PAT (full scopes) + conor-ops fine-grained PAT. gh CLI both accounts registered.
 
-## Active repos (OneDrive\ConsolidatedDevelopment)
+## Recovery Operation Context
 
-| Repo | Remote | Size | Status |
-|------|--------|------|--------|
-| vertex_orchestrator | conor-ops/fictional-invention | — | This backend (31 tests, all live) |
-| hermes-agent-recovery-skills | AAW/hermes-agent-recovery-skills | 104.4 MB | 171 skills, MCP server, Docker |
-| OmniDev | conor-ops/OmniDev | 1.6 MB | DevGate Android app (5 providers) |
-| Numera2 | conor-ops/Numera2 | — | Firebase enterprise app |
-| aider | AAW/aider-conor-fork | 75 MB | Fork of Aider-AI/aider (v0.86.3) |
-| gk-cli-agents | conor-ops/gk-cli-agents | 7 MB | GitKraken CLI (MCP server, AI commits) |
-| MasterRecovery3 | AAW/MasterRecovery3 | 1.18 GB | Autonomous recovery workflow |
-| btcrecover | AAW/btcrecover | 42.9 MB | BTC password/seed recovery |
-| local-recovery | AAW/local-recovery | — | Crypto recovery tools |
-| MasterRecoveryAgents | AAW/MasterRecoveryAgents | 413 MB | Cloning in progress |
+MasterRecovery2 (DESKTOP-7F4FEDJ, offline from this machine):
+- ClawdBot/JARVIS orchestrator + OpenClaw gateway (Gemini 2.0 Flash, ws://127.0.0.1:18789)
+- mega_scanner.py running SEED_B brute-force (750K passwords, BIP44/49/84)
+- 6 recovery tracks (A-F) targeting ~$200K+ in BTC, LTC, DOGE, PPC
+- Machines: PC + HP15 Ubuntu (192.168.4.32) + Homebook (192.168.1.3, unreachable)
 
-## Backup repos (JayLang085MR4\OneDrive\ConsolidatedDevelopment\FoundRepos)
+MasterRecovery3 (cloned to ConsolidatedDevelopment, pushed to AAW):
+- Autonomous recovery orchestration system
+- mega_scanner.py patched with change address scanning (CHAIN_INT)
+- RECOVERY_FINDINGS.md documents all AI-identified issues
+- Uses bip_utils, bitcoinlib for address derivation
+- Config at config/recovery.json (gitignored, sensitive)
 
-| Repo | Remote | Status |
-|------|--------|--------|
-| MasterRecovery2 | NO REMOTE | 9.4 GB, canonical backup |
-| MasterRecovery3 | conor-ops/MasterRecovery3 | 408.6 MB, canonical copy |
-| MasterRecovery3_SSOT | 208DevOps/MasterRecovery3_SSOT | Enterprise SSOT |
-| JARVIS | conor-ops/JARVIS | 109.6 MB |
-| FlowState-Finance | conor-ops/FlowState-Finance | |
-| numera | conor-ops/numera | |
-| BizBalance | NO REMOTE | Needs remote |
-| agents-cli | AAW/agents-cli | |
-| mindsdb | AAW/mindsdb | 210.1 MB |
-| GenAIMindMapFlowBuilder | AAW/GenAIMindMapFlowBuilder | |
-| antigravity-sdk-python | AAW/antigravity-sdk-python | |
-| autonomous-recovery | AAW/autonomous-recovery | |
-| trezor-firmware | NO REMOTE | |
-| rtl8812au/8821au/88x2bu | aircack-ng/lwfinger/cilynx | WiFi drivers, duplicates archived to M: |
+MasterRecovery4 = GCP project master-recovery-hub-2026 (Vertex AI backend for all AI calls)
 
-## Agent Hub (C:\Users\jayla\agent-hub\)
-
-Unified configuration and orchestration layer connecting all components:
-
-```
-agent-hub/
-  configs/
-    agent-hub.json              # GCloud project (master-recovery-hub-2026)
-    mcp-config.json             # 17 MCP servers, tokens via env vars
-    .env.template               # All API keys documented
-    github-integration.json     # 37 repos mapped across 3 orgs
-    gdpr-compliance-reference.md # 8.3KB GDPR research (Articles 5-39, 83)
-    sentinel-dr/
-      sentinel-dr.service       # Systemd service unit
-      sentinel-dr.timer         # 60s watchdog timer
-      install-sentinel-dr.sh    # Deployment script
-  scripts/
-    setup-env.ps1               # Environment setup (gcloud, env vars, APIs)
-    orchestrator.py             # Unified Python orchestrator (CrewAI+AutoGen+Aider)
-    move-duplicate-repos.bat    # Manual repo dedup script
-  skills/                       # Ready for skill linking
-```
-
-## Hermes Agent Platform
-
-- **CLI**: `C:\Users\jayla\AppData\Local\hermes\hermes-agent\bin\hermes.exe`
-- **Repo**: `ConsolidatedDevelopment\hermes-agent-recovery-skills` (104.4 MB, 4912 files)
-- **171 skills** linked to:
-  - Ollama: `~\.ollama\skills\` (172 total with skill-creator)
-  - Claude: `~\.claude\skills\` (171)
-  - Gemini: `~\.gemini\skills\` (171)
-- **Skill categories**: creative(25), mlops(25), research(17), productivity(15), 
-  software-development(12), autonomous-ai-agents(9), finance(8), devops(7), 
-  github(6), security(4), blockchain(3), + 19 more
-- **MCP server**: `mcp_serve.py` in hermes repo
-- **Optional MCPs**: linear, n8n
-
-## Google Cloud integration
-
-| Component | Value |
-|-----------|-------|
-| Project ID | master-recovery-hub-2026 |
-| Project name | MasterRecovery4 |
-| Region | us-central1 |
-| Auth | ADC (gcloud auth application-default login) |
-| APIs enabled | aiplatform, cloudbuild, secretmanager, iam |
-| MySQL instance | 8.4 (free trial, creating) |
-| Other projects | gen-lang-client-0770467301 (Autonomous-Agents), gen-lang-client-0999709111 (Fence Estimate Tool) |
-
-## MCP servers
-
-17 MCP servers configured in `agent-hub/configs/mcp-config.json`:
-- GitHub MCP Server (Docker, token via env var)
-- GitKraken CLI MCP (gk mcp serve)
-- Google Cloud: BigQuery, Cloud SQL, Spanner, GKE, Cloud Run, Vertex AI Search
-- Google Drive, Filesystem, HuggingFace, Sequential Thinking
-- Linear, Antimetal, Google Home Developer
-
-## DevTools installed
-
-| Tool | Version | Path |
-|------|---------|------|
-| Python (system) | 3.14.6 | C:\Python314\ |
-| Python (venv) | 3.11.15 | vertex_orchestrator\.venv\ |
-| Node.js | 24.18.1 | C:\Program Files\nodejs\ |
-| Docker | 29.6.2 | C:\Program Files\Docker\ |
-| Git | 2.55.0 | C:\Program Files\Git\ |
-| gcloud SDK | 580.0.0 | AppData\Local\Google\Cloud SDK\ |
-| Hermes CLI | installed | AppData\Local\hermes\hermes-agent\bin\ |
-| Aider | 0.86.3 | AppData\Roaming\Python\Python314\Scripts\ |
-| Antigravity IDE | installed | AppData\Local\Programs\Antigravity IDE\ |
-| Ollama | installed | glm-5.2:cloud (Hermes integration) |
+Autonomous-Agentic-Workflows = GitHub enterprise org holding all recovery + agent repos (57 total)
 
 ## Running the server
 
@@ -158,15 +94,6 @@ agent-hub/
 cd C:\Users\jayla\OneDrive\ConsolidatedDevelopment\vertex_orchestrator
 $env:ORCHESTRATOR_API_KEY="***"
 .venv\Scripts\python.exe -m vertex_orchestrator.server
-```
-
-Output:
-```
-Vertex Orchestrator backend running on http://0.0.0.0:8000
-  Project: master-recovery-hub-2026
-  Auth: ENABLED (ORCHESTRATOR_API_KEY set)
-  File access: restricted to <ConsolidatedDevelopment>
-  Endpoints: /health, /execute, /batch, /providers
 ```
 
 ## Testing
@@ -177,32 +104,6 @@ Vertex Orchestrator backend running on http://0.0.0.0:8000
 ```
 
 All three providers confirmed live with Vertex AI:
-- CrewAI: returns structured analysis responses
+- CrewAI: returns structured analysis (used by recovery endpoints)
 - AutoGen: returns conversation responses via litellm
 - Aider: edits files locally through Vertex AI
-
-## Sentinel-DR (Disaster Recovery)
-
-Systemd service + watchdog timer for autonomous DR scanning:
-- Service: `sentinel-dr.service` (oneshot, CPU-limited, sandboxed)
-- Timer: `sentinel-dr.timer` (60s heartbeat, persistent)
-- Configs: `agent-hub/configs/sentinel-dr/`
-- Deploy: `install-sentinel-dr.sh` on recovery hosts
-
-## Repo dedup status
-
-- 26 duplicate repos moved to `M:\RepoBackups\` (Storage Space)
-- 6 remaining in FoundRepos (script written: `move-duplicate-repos.bat`)
-- ~100+ GB in duplicate VHDX/ZIP files identified across drives
-- Consolidation target: D: (952GB NVMe SSD) or M: (10TB Storage Space)
-
-## Deleted repos (GitHub)
-
-| Repo | Status | Notes |
-|------|--------|-------|
-| conor-ops/fclones | Restorable | File dedup tool |
-| conor-ops/testdisk | Restorable | Disk recovery |
-| conor-ops/advanced-wallets | Restorable | Crypto wallets |
-| conor-ops/GenAIMindMapFlowBuilder | Skip | Exists in AAW |
-| conor-ops/MasterRecoveryAgentsTransfer | Skip | AAW has MasterRecoveryAgents |
-| conor-ops/MemGPT | Contact support | Can't restore |
