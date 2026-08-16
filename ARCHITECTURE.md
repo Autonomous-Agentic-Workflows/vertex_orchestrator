@@ -49,12 +49,14 @@ All three talk to Google Vertex AI (gemini-2.5-pro / gemini-2.5-flash in us-cent
 - **Auth**: API key via `ORCHESTRATOR_API_KEY` env var. If set, POST endpoints require `Authorization: Bearer <key>`. If not set, runs open (local dev only).
 - **File access**: `EDIT` task `file_path` restricted to `ConsolidatedDevelopment/` directory. Paths outside get 403.
 - CORS: `Access-Control-Allow-Origin: *` (for Android app bridge)
+- **Event logging**: Auth failures and key operations logged to `~/docs/events/` via `event_log.py`
 
 ### Endpoints
 
 | Endpoint | Method | Auth | Purpose |
 |----------|--------|------|---------|
-| /health | GET | No | Health check, lists providers + project |
+| /health | GET | No | Health check, lists providers + project + fallback status |
+| /fallback/status | GET | No | Ollama fallback configuration & model availability |
 | /providers | GET | No | List available agent frameworks + models |
 | /execute | POST | Yes | Execute single task (ANALYSIS/CONVERSATION/EDIT) |
 | /batch | POST | Yes | Execute multiple tasks in sequence |
@@ -63,6 +65,31 @@ All three talk to Google Vertex AI (gemini-2.5-pro / gemini-2.5-flash in us-cent
 | /recovery/analyze-seeds | POST | Yes | AI analysis of seed derivation paths, suggests missed paths |
 | /recovery/passphrases | POST | Yes | AI-generated passphrase variations |
 | /recovery/analyze-log | POST | Yes | Parse scanner logs for patterns, hits, errors |
+| /cline/execute | POST | Yes | Execute a task via Cline CLI (local autonomous coding with Ollama) |
+
+### MCP Server
+
+The `mcp_server.py` module exposes all orchestrator endpoints as MCP tools
+over JSON-RPC 2.0 / stdio. MCP-compatible clients (Claude, Cline, Hermes) can
+call recovery analysis, task execution, and overseer management through the
+standard Model Context Protocol.
+
+```json
+{
+  "mcpServers": {
+    "vertex-orchestrator": {
+      "command": "python",
+      "args": ["-m", "vertex_orchestrator.mcp_server"]
+    }
+  }
+}
+```
+
+**12 MCP tools**: execute_task, batch_execute, recovery_status, recovery_targets,
+recovery_analyze_seeds, recovery_passphrases, recovery_analyze_log,
+overseer_status, overseer_start, overseer_stop, fallback_status, health
+
+**3 MCP resources**: orchestrator://health, orchestrator://providers, orchestrator://fallback
 
 ## Recovery Integration
 

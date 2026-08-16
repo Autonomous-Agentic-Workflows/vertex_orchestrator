@@ -21,10 +21,13 @@ from __future__ import annotations
 import json
 import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 from vertex_orchestrator.config import OllamaConfig, VertexAIConfig
 from vertex_orchestrator.orchestrator import Orchestrator, TaskType
+from vertex_orchestrator.event_log import (
+    log_request, log_recovery, log_overseer, log_security,
+)
 
 
 class OrchestratorHandler(BaseHTTPRequestHandler):
@@ -47,7 +50,10 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
         if not api_key:
             return True  # No key set = open (local dev only)
         auth = self.headers.get("Authorization", "")
-        return auth == f"Bearer {api_key}"
+        if auth != f"Bearer {api_key}":
+            log_security("auth_failure", f"path={self.path} ip={self.client_address[0]}")
+            return False
+        return True
 
     def _read_body(self) -> dict:
         length = int(self.headers.get("Content-Length", 0))
@@ -63,7 +69,9 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
         self._send_json(200, {"status": "ok"})
 
     def do_GET(self) -> None:
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
+        query_params = {k: v[0] for k, v in parse_qs(parsed.query).items()}
 
         if path == "/health":
             fallback_enabled = os.environ.get(
@@ -133,6 +141,16 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
                 self._send_json(503, {"success": False, "error": "overseer not running — POST /overseer/start first"})
                 return
             self._send_json(200, overseer.get_mcp_info())
+        elif path == "/recovery/targets":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.recovery import RecoveryIntegration
+            include_sensitive = query_params.get("include_sensitive", "false").lower() == "true"
+            ri = RecoveryIntegration(config=VertexAIConfig(project_id="recovery", location="us-central1"), recovery_repo_path=".")
+            result = ri.load_targets(include_sensitive=include_sensitive)
+            status = 200 if result.get("success") else 404
+            self._send_json(status, result)
         else:
             self._send_json(404, {"error": "not found"})
 
@@ -253,17 +271,6 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             report = ri.full_status_report()
             self._send_json(200, {"success": True, "report": report})
 
-        elif path == "/recovery/targets":
-            if not self._check_auth():
-                self._send_json(401, {"success": False, "error": "Unauthorized"})
-                return
-            from vertex_orchestrator.recovery import RecoveryIntegration
-            include_sensitive = self.query_params.get("include_sensitive", "false").lower() == "true"
-            ri = RecoveryIntegration(config=config, recovery_repo_path=".")
-            result = ri.load_targets(include_sensitive=include_sensitive)
-            status = 200 if result.get("success") else 404
-            self._send_json(status, result)
-
         elif path == "/recovery/analyze-seeds":
             if not self._check_auth():
                 self._send_json(401, {"success": False, "error": "Unauthorized"})
@@ -343,6 +350,30 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             result = ri.analyze_scanner_log(log_path)
             self._send_json(200, result)
 
+        elif path == "/cline/execute":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.cline_runner import ClineConfig, ClineRunner
+            task = body.get("task", "")
+            if not task:
+                self._send_json(400, {"success": False, "error": "task is required"})
+                return
+            cline_config = ClineConfig(
+                model=body.get("model", "gemma4:26b"),
+                provider=body.get("provider", "ollama"),
+                timeout=body.get("timeout", 120),
+                working_dir=body.get("working_dir", ""),
+            )
+            runner = ClineRunner(config=cline_config, task=task)
+            result = runner.run()
+            self._send_json(200, {
+                "success": result.success,
+                "output": result.output,
+                "error": result.error,
+                "exit_code": result.exit_code,
+            })
+
         else:
             self._send_json(404, {"error": "not found"})
 
@@ -356,7 +387,7 @@ def run_server(host: str = "0.0.0.0", port: int = 8000) -> None:
     print(f"  Auth: {'ENABLED (ORCHESTRATOR_API_KEY set)' if os.environ.get('ORCHESTRATOR_API_KEY') else 'OPEN (no key set — local dev only)'}")
     print(f"  Fallback: {'ENABLED' if fallback_enabled else 'DISABLED'} (Ollama at 127.0.0.1:11434)")
     print(f"  File access: restricted to {os.environ.get('ORCHESTRATOR_ALLOWED_BASE', '<ConsolidatedDevelopment>')}")
-    print(f"  Endpoints: /health, /fallback/status, /execute, /batch, /providers, /recovery/*, /overseer/*")
+    print(f"  Endpoints: /health, /fallback/status, /execute, /batch, /providers, /recovery/*, /overseer/*, /cline/execute")
     print(f"  Press Ctrl+C to stop")
     try:
         server.serve_forever()
