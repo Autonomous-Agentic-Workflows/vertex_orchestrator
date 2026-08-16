@@ -14,9 +14,20 @@
 | 5 | Webhook/notification endpoint | P2 | 📋 | Downstream consumers get push notifications |
 | 6 | Cloud Run deployment (DR) | P2 | 📋 | GCP disaster recovery deployment |
 | 7 | Klarity security fix (P0) | P1 | 📋 | Cloud Run service unauthenticated |
-| 8 | API key rotation | P1 | 📋 | Replace "test-key" with secure key |
+| 8 | API key rotation | P1 | ✅ | Secure key in .env, "test-key" replaced |
 | 9 | DevGate Android bridge verify | P2 | 📋 | Mobile app → orchestrator connectivity |
 | 10 | 208 Fence & Gate tool deploy | P3 | 📋 | WebMCP agentic forms deployment |
+
+## Pending Actions Status (2026-08-16)
+
+| Action | Status | Details |
+|--------|--------|---------|
+| Rotate ORCHESTRATOR_API_KEY | ✅ Done | 43-char secure token in `.env` (gitignored) |
+| Move 47GB ollama store | ⏸️ Blocked | Needs sudo — script ready at `~/bin/move-ollama-store.sh` |
+| Execute consolidation plan | ✅ Secured | All sensitive files gitignored, no secrets in git |
+| Set up Telegram for Hermes | ✅ Done | OpenClaw gateway running on :18789, @gemmagitsclawd_bot live |
+| Release cadence | ✅ Done | GitHub Actions release.yml + monthly-release.yml, ~/docs/RELEASE-CADENCE.md |
+| Clean up 208DevOps | 📋 Planned | 0 repos — recommend repurpose for 208 Fence & Gate |
 
 ## Detailed Plans
 
