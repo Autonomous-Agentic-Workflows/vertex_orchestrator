@@ -1476,9 +1476,1947 @@
       </div>
     </div>
 
+    <!-- ================================================================ -->
+    <!-- AGY MCP SERVERS + CROSS-AGENT INTEGRATION MAP                     -->
+    <!-- ================================================================ -->
+
+    <div class="header" style="margin-top: 3rem;">
+      <div class="header-row">
+        <div class="pulse-dot" style="background: #22d3ee;"></div>
+        <h1 style="font-size: 1.25rem;">AGY MCP Servers + Cross-Agent Integration Map</h1>
+      </div>
+      <p class="subtitle">12 AGY MCP servers · 2 Hermes MCP servers · BigQuery state inheritance · Vertex AI fallback chain</p>
+    </div>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1200 680">
+        <defs>
+          <marker id="ah4" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" /></marker>
+          <marker id="ah4-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee" /></marker>
+          <marker id="ah4-emerald" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#34d399" /></marker>
+          <marker id="ah4-amber" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24" /></marker>
+          <marker id="ah4-violet" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa" /></marker>
+          <marker id="ah4-rose" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185" /></marker>
+          <pattern id="grid4" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid4)" />
+
+        <!-- Boundaries -->
+        <rect x="20" y="30" width="370" height="620" rx="12" fill="rgba(34, 211, 238, 0.03)" stroke="#22d3ee" stroke-width="1" stroke-dasharray="8,4" opacity="0.4"/>
+        <text x="32" y="48" fill="#22d3ee" font-size="10" font-weight="600" opacity="0.6">AGY CLI (Antigravity) — 12 MCP Servers</text>
+
+        <rect x="410" y="30" width="370" height="620" rx="12" fill="rgba(6, 78, 59, 0.03)" stroke="#34d399" stroke-width="1" stroke-dasharray="8,4" opacity="0.4"/>
+        <text x="422" y="48" fill="#34d399" font-size="10" font-weight="600" opacity="0.6">Hermes Agent — 2 MCP Servers</text>
+
+        <rect x="800" y="30" width="380" height="620" rx="12" fill="rgba(251, 191, 36, 0.03)" stroke="#fbbf24" stroke-width="1" stroke-dasharray="8,4" opacity="0.4"/>
+        <text x="812" y="48" fill="#fbbf24" font-size="10" font-weight="600" opacity="0.6">Shared GCP Resources (master-recovery-hub-2026)</text>
+
+        <!-- Cross arrows (behind boxes) -->
+        <!-- AGY BigQuery → shared BigQuery -->
+        <path d="M 200 200 L 820 200" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#ah4-violet)" opacity="0.5"/>
+        <text x="510" y="195" fill="#a78bfa" font-size="7" text-anchor="middle" opacity="0.6">queries dr_state</text>
+
+        <!-- Hermes BigQuery → shared BigQuery -->
+        <path d="M 600 200 L 820 200" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#ah4-violet)" opacity="0.5"/>
+
+        <!-- AGY Cloud Run → shared Cloud Run -->
+        <path d="M 200 330 L 820 330" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#ah4-amber)" opacity="0.5"/>
+        <text x="510" y="325" fill="#fbbf24" font-size="7" text-anchor="middle" opacity="0.6">manages services</text>
+
+        <!-- Hermes Cloud Run → shared Cloud Run -->
+        <path d="M 600 330 L 820 330" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#ah4-amber)" opacity="0.5"/>
+
+        <!-- AGY → Vertex AI -->
+        <path d="M 200 520 L 820 520" fill="none" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah4-emerald)" opacity="0.4"/>
+        <text x="510" y="515" fill="#34d399" font-size="7" text-anchor="middle" opacity="0.6">gemini-2.5-flash</text>
+
+        <!-- Hermes → Ollama -->
+        <path d="M 600 520 L 820 580" fill="none" stroke="#34d399" stroke-width="1.5" stroke-dasharray="5,5" marker-end="url(#ah4-emerald)" opacity="0.4"/>
+        <text x="710" y="560" fill="#34d399" font-size="7" text-anchor="middle" opacity="0.6">fallback</text>
+
+        <!-- ================================================================ -->
+        <!-- AGY MCP SERVERS (left column) -->
+        <!-- Row 1: Remote GCP services -->
+        <rect x="30" y="70" width="170" height="40" rx="4" fill="#0f172a"/>
+        <rect x="30" y="70" width="170" height="40" rx="4" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="115" y="87" fill="white" font-size="9" font-weight="600" text-anchor="middle">datacloud_bigquery_remote</text>
+        <text x="115" y="100" fill="#fbbf24" font-size="7" text-anchor="middle">bigquery.googleapis.com/mcp</text>
+
+        <rect x="210" y="70" width="170" height="40" rx="4" fill="#0f172a"/>
+        <rect x="210" y="70" width="170" height="40" rx="4" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="295" y="87" fill="white" font-size="9" font-weight="600" text-anchor="middle">datacloud_spanner_remote</text>
+        <text x="295" y="100" fill="#fbbf24" font-size="7" text-anchor="middle">spanner.googleapis.com/mcp</text>
+
+        <!-- Row 2 -->
+        <rect x="30" y="120" width="170" height="40" rx="4" fill="#0f172a"/>
+        <rect x="30" y="120" width="170" height="40" rx="4" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="115" y="137" fill="white" font-size="9" font-weight="600" text-anchor="middle">google-kubernetes-engine</text>
+        <text x="115" y="150" fill="#fbbf24" font-size="7" text-anchor="middle">container.googleapis.com/mcp</text>
+
+        <rect x="210" y="120" width="170" height="40" rx="4" fill="#0f172a"/>
+        <rect x="210" y="120" width="170" height="40" rx="4" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="295" y="137" fill="white" font-size="9" font-weight="600" text-anchor="middle">vertex-ai-search</text>
+        <text x="295" y="150" fill="#fbbf24" font-size="7" text-anchor="middle">discoveryengine.googleapis.com</text>
+
+        <!-- Row 3 -->
+        <rect x="30" y="170" width="170" height="40" rx="4" fill="#0f172a"/>
+        <rect x="30" y="170" width="170" height="40" rx="4" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="115" y="187" fill="white" font-size="9" font-weight="600" text-anchor="middle">gcp-secret-manager</text>
+        <text x="115" y="200" fill="#fbbf24" font-size="7" text-anchor="middle">secretmanager.googleapis.com</text>
+
+        <rect x="210" y="170" width="170" height="40" rx="4" fill="#0f172a"/>
+        <rect x="210" y="170" width="170" height="40" rx="4" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="295" y="187" fill="white" font-size="9" font-weight="600" text-anchor="middle">gcp-storage</text>
+        <text x="295" y="200" fill="#fbbf24" font-size="7" text-anchor="middle">storage.googleapis.com/mcp</text>
+
+        <!-- Row 4: Local/stdio servers -->
+        <rect x="30" y="230" width="170" height="40" rx="4" fill="#0f172a"/>
+        <rect x="30" y="230" width="170" height="40" rx="4" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="115" y="247" fill="white" font-size="9" font-weight="600" text-anchor="middle">cloudrun (npx)</text>
+        <text x="115" y="260" fill="#34d399" font-size="7" text-anchor="middle">@google-cloud/cloud-run-mcp</text>
+
+        <rect x="210" y="230" width="170" height="40" rx="4" fill="#0f172a"/>
+        <rect x="210" y="230" width="170" height="40" rx="4" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="295" y="247" fill="white" font-size="9" font-weight="600" text-anchor="middle">github-mcp-server</text>
+        <text x="295" y="260" fill="#34d399" font-size="7" text-anchor="middle">Docker · GITHUB_PAT</text>
+
+        <!-- Row 5 -->
+        <rect x="30" y="280" width="170" height="40" rx="4" fill="#0f172a"/>
+        <rect x="30" y="280" width="170" height="40" rx="4" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="115" y="297" fill="white" font-size="9" font-weight="600" text-anchor="middle">sequential-thinking</text>
+        <text x="115" y="310" fill="#34d399" font-size="7" text-anchor="middle">@modelcontextprotocol/server</text>
+
+        <rect x="210" y="280" width="170" height="40" rx="4" fill="#0f172a"/>
+        <rect x="210" y="280" width="170" height="40" rx="4" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="295" y="297" fill="white" font-size="9" font-weight="600" text-anchor="middle">linear-mcp-server</text>
+        <text x="295" y="310" fill="#34d399" font-size="7" text-anchor="middle">mcp.linear.app/sse</text>
+
+        <!-- Row 6: Antigravity IDE proxies -->
+        <rect x="30" y="330" width="170" height="40" rx="4" fill="#0f172a"/>
+        <rect x="30" y="330" width="170" height="40" rx="4" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="115" y="347" fill="white" font-size="9" font-weight="600" text-anchor="middle">notebooks</text>
+        <text x="115" y="360" fill="#22d3ee" font-size="7" text-anchor="middle">Antigravity IDE proxy</text>
+
+        <rect x="210" y="330" width="170" height="40" rx="4" fill="#0f172a"/>
+        <rect x="210" y="330" width="170" height="40" rx="4" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="295" y="347" fill="white" font-size="9" font-weight="600" text-anchor="middle">visualization</text>
+        <text x="295" y="360" fill="#22d3ee" font-size="7" text-anchor="middle">Antigravity IDE proxy</text>
+
+        <!-- Row 7 -->
+        <rect x="30" y="380" width="170" height="40" rx="4" fill="#0f172a"/>
+        <rect x="30" y="380" width="170" height="40" rx="4" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="115" y="397" fill="white" font-size="9" font-weight="600" text-anchor="middle">data-agent-kit</text>
+        <text x="115" y="410" fill="#22d3ee" font-size="7" text-anchor="middle">Antigravity IDE proxy</text>
+
+        <!-- AGY config summary -->
+        <rect x="30" y="440" width="350" height="80" rx="6" fill="#0f172a"/>
+        <rect x="30" y="440" width="350" height="80" rx="6" fill="rgba(34, 211, 238, 0.1)" stroke="#22d3ee" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="205" y="460" fill="#22d3ee" font-size="9" font-weight="600" text-anchor="middle">AGY Config Summary</text>
+        <text x="205" y="476" fill="#94a3b8" font-size="8" text-anchor="middle">model: glm-5.2:cloud → gemma4:31b → gemini-2.5-pro</text>
+        <text x="205" y="490" fill="#94a3b8" font-size="8" text-anchor="middle">context: 131K · turns: 1000 · tokens: 8192</text>
+        <text x="205" y="504" fill="#94a3b8" font-size="8" text-anchor="middle">project: master-recovery-hub-2026 · tokyo night</text>
+        <text x="205" y="518" fill="#34d399" font-size="7" text-anchor="middle">✓ 12 MCP servers all enabled</text>
+
+        <!-- AGY bridge -->
+        <rect x="30" y="540" width="350" height="50" rx="6" fill="#0f172a"/>
+        <rect x="30" y="540" width="350" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="205" y="560" fill="white" font-size="10" font-weight="600" text-anchor="middle">AGY Cross-Agentic Bridge</text>
+        <text x="205" y="575" fill="#34d399" font-size="8" text-anchor="middle">4 subagents · 4 tools · --ollama-only · fallback</text>
+
+        <!-- ================================================================ -->
+        <!-- HERMES MCP SERVERS (center column) -->
+        <rect x="420" y="70" width="170" height="40" rx="4" fill="#0f172a"/>
+        <rect x="420" y="70" width="170" height="40" rx="4" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="505" y="87" fill="white" font-size="9" font-weight="600" text-anchor="middle">gcp-cloudrun</text>
+        <text x="505" y="100" fill="#34d399" font-size="7" text-anchor="middle">8 tools · @google-cloud</text>
+
+        <rect x="600" y="70" width="170" height="40" rx="4" fill="#0f172a"/>
+        <rect x="600" y="70" width="170" height="40" rx="4" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="685" y="87" fill="white" font-size="9" font-weight="600" text-anchor="middle">gcp-bigquery</text>
+        <text x="685" y="100" fill="#34d399" font-size="7" text-anchor="middle">5 tools · @channel.io</text>
+
+        <!-- Hermes agent hub -->
+        <rect x="420" y="130" width="350" height="120" rx="6" fill="#0f172a"/>
+        <rect x="420" y="130" width="350" height="120" rx="6" fill="rgba(251, 146, 60, 0.2)" stroke="#fb923c" stroke-width="1.5"/>
+        <text x="595" y="150" fill="white" font-size="11" font-weight="600" text-anchor="middle">Agent Hub — 10 Agents</text>
+        <text x="595" y="167" fill="#94a3b8" font-size="8" text-anchor="middle">compliance · gdpr · drive-layout · vertex-orch</text>
+        <text x="595" y="180" fill="#94a3b8" font-size="8" text-anchor="middle">git-profiles · backup · hermes · openclaw</text>
+        <text x="595" y="193" fill="#94a3b8" font-size="8" text-anchor="middle">ollama-router · dr-agent</text>
+        <text x="595" y="210" fill="#fb923c" font-size="8" text-anchor="middle">orchestrator.py: 13+ INTENTS keyword routes</text>
+        <text x="595" y="224" fill="#34d399" font-size="7" text-anchor="middle">✓ ALL 10 with real handlers · register_all()</text>
+        <text x="595" y="238" fill="#34d399" font-size="7" text-anchor="middle">✓ 3-layer fallback · token budget 120K · 78 tests</text>
+
+        <!-- Hermes config summary -->
+        <rect x="420" y="270" width="350" height="80" rx="6" fill="#0f172a"/>
+        <rect x="420" y="270" width="350" height="80" rx="6" fill="rgba(6, 78, 59, 0.2)" stroke="#34d399" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="595" y="290" fill="#34d399" font-size="9" font-weight="600" text-anchor="middle">Hermes Config</text>
+        <text x="595" y="306" fill="#94a3b8" font-size="8" text-anchor="middle">model: glm-5.2:cloud · provider: ollama-launch</text>
+        <text x="595" y="320" fill="#94a3b8" font-size="8" text-anchor="middle">v0.20.1 · Python 3.11 · streaming</text>
+        <text x="595" y="334" fill="#94a3b8" font-size="8" text-anchor="middle">toolsets: hermes-cli + web + MCP</text>
+        <text x="595" y="348" fill="#fbbf24" font-size="7" text-anchor="middle">⚠ 2 MCP servers (AGY has 12 — wire more?)</text>
+
+        <!-- Hermes monitoring -->
+        <rect x="420" y="370" width="350" height="100" rx="6" fill="#0f172a"/>
+        <rect x="420" y="370" width="350" height="100" rx="6" fill="rgba(8, 51, 68, 0.2)" stroke="#22d3ee" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="595" y="390" fill="#22d3ee" font-size="9" font-weight="600" text-anchor="middle">Monitoring Stack</text>
+        <text x="595" y="407" fill="#94a3b8" font-size="8" text-anchor="middle">agent-hub-monitor.py (29KB · --dry-run/--watch)</text>
+        <text x="595" y="421" fill="#94a3b8" font-size="8" text-anchor="middle">run-scheduled-checks.sh (5 checks · 2/5/10 min)</text>
+        <text x="595" y="435" fill="#94a3b8" font-size="8" text-anchor="middle">dr_monitor.py (scan · P0-P3 alerts)</text>
+        <text x="595" y="449" fill="#34d399" font-size="7" text-anchor="middle">✓ dry-run: 9 healthy · 1 degraded (dr-agent)</text>
+        <text x="595" y="461" fill="#34d399" font-size="7" text-anchor="middle">✓ state file: .agent-hub-state.json</text>
+
+        <!-- fwd-think -->
+        <rect x="420" y="490" width="350" height="60" rx="6" fill="#0f172a"/>
+        <rect x="420" y="490" width="350" height="60" rx="6" fill="rgba(6, 78, 59, 0.3)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="595" y="510" fill="white" font-size="10" font-weight="600" text-anchor="middle">fwd-think: propose · debate · loop · status</text>
+        <text x="595" y="525" fill="#94a3b8" font-size="8" text-anchor="middle">3 iterations · 4 candidates · 4 counters · closed loop</text>
+        <text x="595" y="540" fill="#34d399" font-size="7" text-anchor="middle">✓ self-populating todo engine · default=auto (ollama+vertex)</text>
+
+        <!-- ================================================================ -->
+        <!-- SHARED GCP RESOURCES (right column) -->
+        <rect x="810" y="70" width="360" height="130" rx="6" fill="#0f172a"/>
+        <rect x="810" y="70" width="360" height="130" rx="6" fill="rgba(76, 29, 149, 0.3)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="990" y="90" fill="white" font-size="11" font-weight="600" text-anchor="middle">BigQuery — dr_state + recovery_logs</text>
+        <text x="990" y="107" fill="#94a3b8" font-size="8" text-anchor="middle">Tables: alerts · service_inventory · remediation_actions</text>
+        <text x="990" y="121" fill="#94a3b8" font-size="8" text-anchor="middle">agent_mapping · monitoring_history · scanner_events</text>
+        <text x="990" y="135" fill="#94a3b8" font-size="8" text-anchor="middle">Views: v_active_alerts · v_service_health · v_pending_remediation</text>
+        <text x="990" y="152" fill="#a78bfa" font-size="7" text-anchor="middle">✓ 6 tables + 3 views · inherited by AGY + Hermes</text>
+        <text x="990" y="166" fill="#34d399" font-size="7" text-anchor="middle">✓ P0 klarity RESOLVED · ra-001/ra-002 completed</text>
+        <text x="990" y="180" fill="#94a3b8" font-size="7" text-anchor="middle">queryable: SELECT * FROM dr_state.v_active_alerts</text>
+
+        <rect x="810" y="220" width="360" height="100" rx="6" fill="#0f172a"/>
+        <rect x="810" y="220" width="360" height="100" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="990" y="240" fill="white" font-size="11" font-weight="600" text-anchor="middle">Cloud Run — 5 Services</text>
+        <text x="990" y="257" fill="#34d399" font-size="8" text-anchor="middle">✓ local-recovery (auth) · autonomous-agents-git (auth)</text>
+        <text x="990" y="271" fill="#fbbf24" font-size="8" text-anchor="middle">⚠ vertex-enterprise-search (404) · enterprise-app (stopped)</text>
+        <text x="990" y="285" fill="#34d399" font-size="8" text-anchor="middle">✓ klarity (SECURED — was P0, now internal-only)</text>
+        <text x="990" y="302" fill="#94a3b8" font-size="7" text-anchor="middle">Dockerfile created · dr-deployment/ (8 files)</text>
+        <text x="990" y="314" fill="#94a3b8" font-size="7" text-anchor="middle">remediation-playbook.yaml · monitoring-cron.yaml</text>
+
+        <rect x="810" y="340" width="360" height="80" rx="6" fill="#0f172a"/>
+        <rect x="810" y="340" width="360" height="80" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="990" y="360" fill="white" font-size="11" font-weight="600" text-anchor="middle">Vertex AI — gemini-2.5-pro / flash</text>
+        <text x="990" y="377" fill="#94a3b8" font-size="8" text-anchor="middle">CrewAI → ANALYSIS · AutoGen → CONVERSATION</text>
+        <text x="990" y="391" fill="#94a3b8" font-size="8" text-anchor="middle">Aider → EDIT · ADC: admin@208fenceandgate.com</text>
+        <text x="990" y="405" fill="#34d399" font-size="7" text-anchor="middle">✓ 78 tests · /fallback/status · /health with fallback</text>
+        <text x="990" y="417" fill="#94a3b8" font-size="7" text-anchor="middle">us-central1 · ZERO_DATA_RETENTION enabled</text>
+
+        <rect x="810" y="440" width="360" height="60" rx="6" fill="#0f172a"/>
+        <rect x="810" y="440" width="360" height="60" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="990" y="460" fill="white" font-size="11" font-weight="600" text-anchor="middle">Ollama — 127.0.0.1:11434</text>
+        <text x="990" y="477" fill="#94a3b8" font-size="8" text-anchor="middle">glm-5.2:cloud · gemma4:31b · kimi-k3:cloud</text>
+        <text x="990" y="491" fill="#94a3b8" font-size="8" text-anchor="middle">gemma4:26b · gemma4:latest</text>
+
+        <!-- Fence tool -->
+        <rect x="810" y="520" width="170" height="50" rx="6" fill="#0f172a"/>
+        <rect x="810" y="520" width="170" height="50" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="895" y="540" fill="white" font-size="10" font-weight="600" text-anchor="middle">Fence Estimate Tool</text>
+        <text x="895" y="555" fill="#fbbf24" font-size="7" text-anchor="middle">gen-lang-client-0999709111</text>
+
+        <!-- AGY bridge launcher -->
+        <rect x="1000" y="520" width="170" height="50" rx="6" fill="#0f172a"/>
+        <rect x="1000" y="520" width="170" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="1085" y="540" fill="white" font-size="10" font-weight="600" text-anchor="middle">agy-bridge</text>
+        <text x="1085" y="555" fill="#34d399" font-size="7" text-anchor="middle">~/bin/agy-bridge --ollama-only</text>
+
+        <!-- Pending items -->
+        <rect x="810" y="590" width="360" height="50" rx="6" fill="#0f172a"/>
+        <rect x="810" y="590" width="360" height="50" rx="6" fill="rgba(136, 19, 55, 0.2)" stroke="#fb7185" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="990" y="608" fill="#fb7185" font-size="9" font-weight="600" text-anchor="middle">Pending (user action)</text>
+        <text x="990" y="622" fill="#fbbf24" font-size="8" text-anchor="middle">⚠ rotate ORCHESTRATOR_API_KEY · move 47GB ollama store (sudo)</text>
+        <text x="990" y="634" fill="#34d399" font-size="8" text-anchor="middle">✓ klarity secured · ✓ SSH key on GitHub · ✓ 34/1/0 integration</text>
+
+        <!-- Legend -->
+        <text x="30" y="610" fill="white" font-size="9" font-weight="600">Legend</text>
+        <rect x="90" y="600" width="12" height="10" rx="2" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="108" y="609" fill="#94a3b8" font-size="8">Remote GCP MCP</text>
+        <rect x="220" y="600" width="12" height="10" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="238" y="609" fill="#94a3b8" font-size="8">Local/Stdio MCP</text>
+        <rect x="350" y="600" width="12" height="10" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="368" y="609" fill="#94a3b8" font-size="8">IDE Proxy</text>
+        <rect x="90" y="618" width="12" height="10" rx="2" fill="rgba(76, 29, 149, 0.3)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="108" y="627" fill="#94a3b8" font-size="8">BigQuery</text>
+        <rect x="220" y="618" width="12" height="10" rx="2" fill="rgba(251, 146, 60, 0.2)" stroke="#fb923c" stroke-width="1"/>
+        <text x="238" y="627" fill="#94a3b8" font-size="8">Agent Hub</text>
+        <line x1="350" y1="623" x2="368" y2="623" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <text x="374" y="627" fill="#94a3b8" font-size="8">Shared query</text>
+      </svg>
+    </div>
+
+    <!-- AGY + Hermes MCP Cards -->
+    <div class="cards" style="margin-top: 2rem;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot cyan"></div>
+          <h3>AGY Remote GCP MCP (6)</h3>
+        </div>
+        <ul>
+          <li>• datacloud_bigquery_remote → bigquery.googleapis.com</li>
+          <li>• datacloud_spanner_remote → spanner.googleapis.com</li>
+          <li>• google-kubernetes-engine → container.googleapis.com</li>
+          <li>• vertex-ai-search → discoveryengine.googleapis.com</li>
+          <li>• gcp-secret-manager → secretmanager.googleapis.com</li>
+          <li>• gcp-storage → storage.googleapis.com</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>AGY Local MCP (6)</h3>
+        </div>
+        <ul>
+          <li>• cloudrun (npx @google-cloud/cloud-run-mcp)</li>
+          <li>• github-mcp-server (Docker, GITHUB_PAT)</li>
+          <li>• sequential-thinking (npx @modelcontextprotocol)</li>
+          <li>• linear-mcp-server (mcp.linear.app/sse)</li>
+          <li>• notebooks (Antigravity IDE proxy)</li>
+          <li>• visualization + data-agent-kit (IDE proxy)</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot amber"></div>
+          <h3>Hermes MCP (2 — expand?)</h3>
+        </div>
+        <ul>
+          <li>• gcp-cloudrun (8 tools, connected)</li>
+          <li>• gcp-bigquery (5 tools, connected)</li>
+          <li style="color:#fbbf24">⚠ Could add: secret-manager, GCS, GKE</li>
+          <li style="color:#fbbf24">⚠ Could add: vertex-ai-search, spanner</li>
+          <li style="color:#fbbf24">⚠ Could add: github-mcp, sequential-thinking</li>
+          <li>• AGY has 12, Hermes has 2 — 10 gap</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot violet"></div>
+          <h3>Shared BigQuery State</h3>
+        </div>
+        <ul>
+          <li>• 6 tables + 3 views in dr_state</li>
+          <li>• recovery_logs.scanner_events</li>
+          <li>• Both AGY + Hermes query same data</li>
+          <li>• v_active_alerts: 4 rows (P0/P1)</li>
+          <li>• v_pending_remediation: 7 rows</li>
+          <li style="color:#34d399">✓ P0 klarity RESOLVED in BigQuery</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot orange"></div>
+          <h3>Cross-Agent Bridge</h3>
+        </div>
+        <ul>
+          <li>• 4 subagents: recovery, gcloud, dr_coord, security</li>
+          <li>• 4 tools: recovery_status, project, dr_alerts, auth</li>
+          <li>• --ollama-only + --mock-vertex-failure flags</li>
+          <li>• Fallback: Vertex → ollama direct API</li>
+          <li>• Launcher: ~/bin/agy-bridge</li>
+          <li>• Model: gemini-2.5-flash (not default 3.6)</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot rose"></div>
+          <h3>Session Deliverables</h3>
+        </div>
+        <ul>
+          <li>• 12 subagents · 4 rounds · 78+ tests</li>
+          <li>• 10 agents with real handlers (0 stubs)</li>
+          <li>• 3-layer fallback (Hub → AGY → VO → Ollama)</li>
+          <li>• DR deployment (8 files) + monitoring</li>
+          <li>• Topology: 5 SVG sections, ~110KB</li>
+          <li>• Integration: 34 pass · 1 warn · 0 fail</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         SECTION 6: AGY CONFIG + JARVIS + GOOGLE AI STUDIO
+         ================================================================ -->
+
+    <!-- Section 6: AGY Config Diagram -->
+    <div class="diagram-container" style="margin-top: 2rem;">
+      <svg viewBox="0 0 1200 780">
+        <defs>
+          <pattern id="grid6" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+          <marker id="ah6-slate" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+          </marker>
+          <marker id="ah6-emerald" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#34d399" />
+          </marker>
+          <marker id="ah6-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee" />
+          </marker>
+          <marker id="ah6-violet" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa" />
+          </marker>
+          <marker id="ah6-amber" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24" />
+          </marker>
+          <marker id="ah6-rose" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185" />
+          </marker>
+          <marker id="ah6-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb923c" />
+          </marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid6)" />
+
+        <!-- Section title bar -->
+        <rect x="50" y="15" width="1100" height="35" rx="6" fill="#0f172a"/>
+        <rect x="50" y="15" width="1100" height="35" rx="6" fill="rgba(52, 211, 153, 0.15)" stroke="#34d399" stroke-width="1"/>
+        <text x="600" y="37" fill="#34d399" font-size="11" font-weight="700" text-anchor="middle">AGY (ANTIGRAVITY CLI) CONFIG + JARVIS RECOVERY ARCHITECTURE + GOOGLE AI STUDIO</text>
+
+        <!-- ================================================================
+             AGY CONFIG PANEL (Left, 2 columns)
+             ================================================================ -->
+
+        <!-- AGY Config boundary -->
+        <rect x="20" y="60" width="560" height="350" rx="12" fill="rgba(52, 211, 153, 0.03)" stroke="#34d399" stroke-width="1" stroke-dasharray="8,4" opacity="0.4"/>
+        <text x="32" y="78" fill="#34d399" font-size="10" font-weight="600" opacity="0.6">AGY Config — ~/.gemini/config/ + ~/.gemini/antigravity-cli/</text>
+
+        <!-- Model Config Card -->
+        <rect x="30" y="90" width="260" height="150" rx="6" fill="#0f172a"/>
+        <rect x="30" y="90" width="260" height="150" rx="6" fill="rgba(52, 211, 153, 0.08)" stroke="#34d399" stroke-width="1" opacity="0.6"/>
+        <rect x="30" y="90" width="260" height="4" rx="2" fill="#34d399"/>
+        <text x="160" y="113" fill="white" font-size="11" font-weight="700" text-anchor="middle">Model Configuration</text>
+        <text x="40" y="133" fill="#94a3b8" font-size="8">Default:</text>
+        <text x="100" y="133" fill="#34d399" font-size="8" font-weight="600">glm-5.2:cloud</text>
+        <text x="40" y="148" fill="#94a3b8" font-size="8">Fallback 1:</text>
+        <text x="100" y="148" fill="#cbd5e1" font-size="8">gemma4:31b (local)</text>
+        <text x="40" y="163" fill="#94a3b8" font-size="8">Fallback 2:</text>
+        <text x="100" y="163" fill="#cbd5e1" font-size="8">gemini-2.5-pro (cloud)</text>
+        <text x="40" y="183" fill="#94a3b8" font-size="8">Context Window:</text>
+        <text x="130" y="183" fill="#22d3ee" font-size="8" font-weight="600">131,072 tokens</text>
+        <text x="40" y="198" fill="#94a3b8" font-size="8">Max Turns:</text>
+        <text x="100" y="198" fill="#cbd5e1" font-size="8">1,000</text>
+        <text x="40" y="213" fill="#94a3b8" font-size="8">Max Tokens:</text>
+        <text x="100" y="213" fill="#cbd5e1" font-size="8">8,192</text>
+        <text x="40" y="228" fill="#94a3b8" font-size="8">Timeouts:</text>
+        <text x="100" y="228" fill="#cbd5e1" font-size="8">600s (exec/mcp/term)</text>
+
+        <!-- Settings Card -->
+        <rect x="310" y="90" width="260" height="150" rx="6" fill="#0f172a"/>
+        <rect x="310" y="90" width="260" height="150" rx="6" fill="rgba(251, 146, 60, 0.08)" stroke="#fb923c" stroke-width="1" opacity="0.6"/>
+        <rect x="310" y="90" width="260" height="4" rx="2" fill="#fb923c"/>
+        <text x="440" y="113" fill="white" font-size="11" font-weight="700" text-anchor="middle">CLI Settings</text>
+        <text x="320" y="133" fill="#94a3b8" font-size="8">GCP Project:</text>
+        <text x="390" y="133" fill="#fbbf24" font-size="8" font-weight="600">master-recovery-hub-2026</text>
+        <text x="320" y="148" fill="#94a3b8" font-size="8">Location:</text>
+        <text x="390" y="148" fill="#cbd5e1" font-size="8">global</text>
+        <text x="320" y="163" fill="#94a3b8" font-size="8">Color Scheme:</text>
+        <text x="390" y="163" fill="#cbd5e1" font-size="8">tokyo night</text>
+        <text x="320" y="178" fill="#94a3b8" font-size="8">Telemetry:</text>
+        <text x="390" y="178" fill="#fb7185" font-size="8">disabled</text>
+        <text x="320" y="193" fill="#94a3b8" font-size="8">Non-workspace:</text>
+        <text x="390" y="193" fill="#34d399" font-size="8">allowed</text>
+        <text x="320" y="213" fill="#94a3b8" font-size="8">Trusted Workspaces:</text>
+        <text x="320" y="226" fill="#cbd5e1" font-size="7">• /home/conor-ops (WSL2)</text>
+        <text x="320" y="237" fill="#cbd5e1" font-size="7">• /mnt/c/Users/jayla (Windows)</text>
+
+        <!-- Permissions Card -->
+        <rect x="30" y="250" width="540" height="150" rx="6" fill="#0f172a"/>
+        <rect x="30" y="250" width="540" height="150" rx="6" fill="rgba(168, 139, 250, 0.06)" stroke="#a78bfa" stroke-width="1" opacity="0.5"/>
+        <rect x="30" y="250" width="540" height="4" rx="2" fill="#a78bfa"/>
+        <text x="300" y="273" fill="white" font-size="11" font-weight="700" text-anchor="middle">Permissions (50+ allow-listed commands)</text>
+        <text x="40" y="293" fill="#a78bfa" font-size="7" font-weight="600">Shell:</text>
+        <text x="40" y="305" fill="#94a3b8" font-size="7">ls, find, cat, grep, head, mkdir, cp, cd, which, ps, git status</text>
+        <text x="40" y="320" fill="#a78bfa" font-size="7" font-weight="600">Cloud:</text>
+        <text x="40" y="332" fill="#94a3b8" font-size="7">gcloud projects/config, vertexctl, enterprise_vertex_orchestrator</text>
+        <text x="40" y="347" fill="#a78bfa" font-size="7" font-weight="600">Python:</text>
+        <text x="40" y="359" fill="#94a3b8" font-size="7">pydantic check, grpc protoc, pytest, unsloth SFT, organize_git_repos</text>
+        <text x="40" y="374" fill="#a78bfa" font-size="7" font-weight="600">System:</text>
+        <text x="40" y="386" fill="#94a3b8" font-size="7">nvidia-smi, uv, node -v, npx, cmd.exe, explorer.exe, powershell.exe</text>
+        <text x="40" y="395" fill="#94a3b8" font-size="7">SSH: github-208-aaw (id_208_aaw key), master_control.py status</text>
+
+        <!-- ================================================================
+             MCP SERVERS PANEL (Right column)
+             ================================================================ -->
+
+        <rect x="600" y="60" width="580" height="350" rx="12" fill="rgba(34, 211, 238, 0.03)" stroke="#22d3ee" stroke-width="1" stroke-dasharray="8,4" opacity="0.4"/>
+        <text x="612" y="78" fill="#22d3ee" font-size="10" font-weight="600" opacity="0.6">12 MCP Servers — mcp_config.json</text>
+
+        <!-- Local/Stdio MCP servers -->
+        <rect x="610" y="90" width="270" height="150" rx="6" fill="#0f172a"/>
+        <rect x="610" y="90" width="270" height="150" rx="6" fill="rgba(6, 78, 59, 0.12)" stroke="#34d399" stroke-width="1" opacity="0.5"/>
+        <rect x="610" y="90" width="270" height="4" rx="2" fill="#34d399"/>
+        <text x="745" y="113" fill="white" font-size="11" font-weight="700" text-anchor="middle">Local / Stdio MCP (5)</text>
+        <text x="620" y="133" fill="#34d399" font-size="8">• notebooks</text>
+        <text x="620" y="146" fill="#94a3b8" font-size="7">IDE proxy → mcp_proxy_bundle.js</text>
+        <text x="620" y="163" fill="#34d399" font-size="8">• visualization</text>
+        <text x="620" y="176" fill="#94a3b8" font-size="7">IDE proxy → mcp_proxy_bundle.js</text>
+        <text x="620" y="193" fill="#34d399" font-size="8">• data-agent-kit</text>
+        <text x="620" y="206" fill="#94a3b8" font-size="7">IDE proxy → mcp_proxy_bundle.js</text>
+        <text x="620" y="223" fill="#34d399" font-size="8">• cloudrun</text>
+        <text x="620" y="236" fill="#94a3b8" font-size="7">npx @google-cloud/cloud-run-mcp</text>
+
+        <!-- Remote GCP MCP servers -->
+        <rect x="900" y="90" width="270" height="150" rx="6" fill="#0f172a"/>
+        <rect x="900" y="90" width="270" height="150" rx="6" fill="rgba(120, 53, 15, 0.12)" stroke="#fbbf24" stroke-width="1" opacity="0.5"/>
+        <rect x="900" y="90" width="270" height="4" rx="2" fill="#fbbf24"/>
+        <text x="1035" y="113" fill="white" font-size="11" font-weight="700" text-anchor="middle">Remote GCP MCP (6)</text>
+        <text x="910" y="133" fill="#fbbf24" font-size="8">• bigquery_remote</text>
+        <text x="910" y="146" fill="#94a3b8" font-size="7">bigquery.googleapis.com/mcp</text>
+        <text x="910" y="163" fill="#fbbf24" font-size="8">• spanner_remote</text>
+        <text x="910" y="176" fill="#94a3b8" font-size="7">spanner.googleapis.com/mcp</text>
+        <text x="910" y="193" fill="#fbbf24" font-size="8">• GKE + Vertex AI Search</text>
+        <text x="910" y="206" fill="#94a3b8" font-size="7">container + discoveryengine .googleapis.com</text>
+        <text x="910" y="223" fill="#fbbf24" font-size="8">• Secret Manager + Storage</text>
+        <text x="910" y="236" fill="#94a3b8" font-size="7">secretmanager + storage.googleapis.com</text>
+
+        <!-- Third-party MCP servers -->
+        <rect x="610" y="250" width="560" height="150" rx="6" fill="#0f172a"/>
+        <rect x="610" y="250" width="560" height="150" rx="6" fill="rgba(136, 19, 55, 0.08)" stroke="#fb7185" stroke-width="1" opacity="0.4"/>
+        <rect x="610" y="250" width="560" height="4" rx="2" fill="#fb7185"/>
+        <text x="890" y="273" fill="white" font-size="11" font-weight="700" text-anchor="middle">Third-Party + Plugin MCP (3)</text>
+        <text x="620" y="293" fill="#fb7185" font-size="8">• github-mcp-server</text>
+        <text x="620" y="306" fill="#94a3b8" font-size="7">Docker → ghcr.io/github/github-mcp-server (PAT auth)</text>
+        <text x="620" y="323" fill="#fb7185" font-size="8">• linear-mcp-server</text>
+        <text x="620" y="336" fill="#94a3b8" font-size="7">npx mcp-remote → mcp.linear.app/sse</text>
+        <text x="620" y="353" fill="#fb7185" font-size="8">• sequential-thinking</text>
+        <text x="620" y="366" fill="#94a3b8" font-size="7">npx @modelcontextprotocol/server-sequential-thinking</text>
+        <text x="620" y="386" fill="#a78bfa" font-size="8" font-weight="600">Plugin: cross-agentic-bridge v1.1.0</text>
+        <text x="620" y="395" fill="#94a3b8" font-size="7">Bridges AGY SDK + GCP (master-recovery-hub-2026) + MasterRecoveryAgents + Ollama fleets</text>
+
+        <!-- ================================================================
+             JARVIS ARCHITECTURE (Bottom left)
+             ================================================================ -->
+
+        <rect x="20" y="420" width="680" height="340" rx="12" fill="rgba(251, 146, 60, 0.03)" stroke="#fb923c" stroke-width="1" stroke-dasharray="8,4" opacity="0.4"/>
+        <text x="32" y="438" fill="#fb923c" font-size="10" font-weight="600" opacity="0.6">JARVIS Recovery Architecture — MasterRecoveryAgents/</text>
+
+        <!-- Tier 0: Orchestrator -->
+        <rect x="30" y="450" width="200" height="70" rx="6" fill="#0f172a"/>
+        <rect x="30" y="450" width="200" height="70" rx="6" fill="rgba(251, 191, 36, 0.15)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="130" y="473" fill="white" font-size="10" font-weight="700" text-anchor="middle">Tier 0: Orchestrator</text>
+        <text x="130" y="488" fill="#fbbf24" font-size="8" text-anchor="middle">Gemini (gemini-2.0-flash)</text>
+        <text x="130" y="502" fill="#94a3b8" font-size="7" text-anchor="middle">Reads recovery state, dispatches</text>
+        <text x="130" y="512" fill="#94a3b8" font-size="7" text-anchor="middle">TaskPackets to manager inboxes</text>
+
+        <!-- Tier 1: Managers -->
+        <rect x="250" y="450" width="130" height="70" rx="6" fill="#0f172a"/>
+        <rect x="250" y="450" width="130" height="70" rx="6" fill="rgba(168, 139, 250, 0.12)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="315" y="473" fill="white" font-size="10" font-weight="700" text-anchor="middle">Tier 1: Managers</text>
+        <text x="315" y="488" fill="#a78bfa" font-size="7" text-anchor="middle">Claude (strategy)</text>
+        <text x="315" y="500" fill="#a78bfa" font-size="7" text-anchor="middle">Copilot (integration)</text>
+        <text x="315" y="512" fill="#a78bfa" font-size="7" text-anchor="middle">Codex (syntax/logic)</text>
+
+        <!-- Event Hub (Central Bus) -->
+        <rect x="400" y="450" width="140" height="70" rx="6" fill="#0f172a"/>
+        <rect x="400" y="450" width="140" height="70" rx="6" fill="rgba(34, 211, 238, 0.15)" stroke="#22d3ee" stroke-width="2"/>
+        <text x="470" y="473" fill="white" font-size="10" font-weight="700" text-anchor="middle">Unified Event Hub</text>
+        <text x="470" y="488" fill="#22d3ee" font-size="8" text-anchor="middle">ws://127.0.0.1:18789</text>
+        <text x="470" y="502" fill="#94a3b8" font-size="7" text-anchor="middle">Pub/Sub WebSocket broker</text>
+        <text x="470" y="512" fill="#94a3b8" font-size="7" text-anchor="middle">204 events logged</text>
+
+        <!-- IPC / Message Broker -->
+        <rect x="560" y="450" width="130" height="70" rx="6" fill="#0f172a"/>
+        <rect x="560" y="450" width="130" height="70" rx="6" fill="rgba(52, 211, 153, 0.12)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="625" y="473" fill="white" font-size="10" font-weight="700" text-anchor="middle">SQLite IPC Bus</text>
+        <text x="625" y="488" fill="#34d399" font-size="8" text-anchor="middle">ipc_state.db</text>
+        <text x="625" y="502" fill="#94a3b8" font-size="7" text-anchor="middle">40MB, pub/sub topics:</text>
+        <text x="625" y="512" fill="#94a3b8" font-size="7" text-anchor="middle">jarvis_events, jarvis_tasks</text>
+
+        <!-- JARVIS Core Scanner -->
+        <rect x="30" y="540" width="200" height="100" rx="6" fill="#0f172a"/>
+        <rect x="30" y="540" width="200" height="100" rx="6" fill="rgba(251, 146, 60, 0.2)" stroke="#fb923c" stroke-width="1.5"/>
+        <text x="130" y="563" fill="white" font-size="11" font-weight="700" text-anchor="middle">JARVIS Scanner</text>
+        <text x="130" y="578" fill="#fb923c" font-size="8" text-anchor="middle">jarvis_core.py</text>
+        <text x="130" y="593" fill="#94a3b8" font-size="7" text-anchor="middle">16 workers (multiprocessing)</text>
+        <text x="130" y="606" fill="#94a3b8" font-size="7" text-anchor="middle">BIP44/49/84 derivation</text>
+        <text x="130" y="619" fill="#34d399" font-size="7" text-anchor="middle">347,565 combos/sec</text>
+        <text x="130" y="632" fill="#34d399" font-size="7" font-weight="600" text-anchor="middle">45.5M tested, 1 hit</text>
+
+        <!-- ClawdBot -->
+        <rect x="250" y="540" width="200" height="100" rx="6" fill="#0f172a"/>
+        <rect x="250" y="540" width="200" height="100" rx="6" fill="rgba(34, 211, 238, 0.12)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="350" y="563" fill="white" font-size="11" font-weight="700" text-anchor="middle">ClawdBot</text>
+        <text x="350" y="578" fill="#22d3ee" font-size="8" text-anchor="middle">run_clawdbot.py</text>
+        <text x="350" y="593" fill="#94a3b8" font-size="7" text-anchor="middle">Monitor + auto-router</text>
+        <text x="350" y="606" fill="#94a3b8" font-size="7" text-anchor="middle">Autonomous sweep coord</text>
+        <text x="350" y="619" fill="#94a3b8" font-size="7" text-anchor="middle">RL recovery coordinator</text>
+        <text x="350" y="632" fill="#94a3b8" font-size="7" text-anchor="middle">Voice prompt handler</text>
+
+        <!-- JARVIS Overseer -->
+        <rect x="470" y="540" width="220" height="100" rx="6" fill="#0f172a"/>
+        <rect x="470" y="540" width="220" height="100" rx="6" fill="rgba(168, 139, 250, 0.12)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="580" y="563" fill="white" font-size="11" font-weight="700" text-anchor="middle">JARVIS Overseer</text>
+        <text x="580" y="578" fill="#a78bfa" font-size="8" text-anchor="middle">agent_jarvis_overseer.py</text>
+        <text x="580" y="593" fill="#94a3b8" font-size="7" text-anchor="middle">Read-only fleet observer</text>
+        <text x="580" y="606" fill="#94a3b8" font-size="7" text-anchor="middle">Watches: agent stalled >5min</text>
+        <text x="580" y="619" fill="#94a3b8" font-size="7" text-anchor="middle">Strategy unchanged >10 iters</text>
+        <text x="580" y="632" fill="#94a3b8" font-size="7" text-anchor="middle">Writes jarvis_overseer_status.md</text>
+
+        <!-- Agent Fleet Summary -->
+        <rect x="30" y="660" width="660" height="90" rx="6" fill="#0f172a"/>
+        <rect x="30" y="660" width="660" height="90" rx="6" fill="rgba(15, 23, 42, 0.8)" stroke="#64748b" stroke-width="1" opacity="0.6"/>
+        <text x="360" y="683" fill="white" font-size="11" font-weight="700" text-anchor="middle">Agent Fleet — 25 agents across 7 providers</text>
+        <text x="40" y="703" fill="#34d399" font-size="7" font-weight="600">Google (5):</text>
+        <text x="40" y="715" fill="#94a3b8" font-size="7">project_manager, gemini_analyst, gdrive_analyst, openclaw, gemini_orchestrator</text>
+        <text x="40" y="728" fill="#a78bfa" font-size="7" font-weight="600">OpenRouter (8):</text>
+        <text x="40" y="740" fill="#94a3b8" font-size="7">worker, researcher, seed_finder, passphrase_mutator, electrum, trezor, blockchain, log_analyzer</text>
+        <text x="380" y="703" fill="#fb923c" font-size="7" font-weight="600">Local (5):</text>
+        <text x="380" y="715" fill="#94a3b8" font-size="7">message_broker, comm_daemon, bitlocker_explorer, bitlocker_context, jarvis_overseer</text>
+        <text x="380" y="728" fill="#22d3ee" font-size="7" font-weight="600">Other (7):</text>
+        <text x="380" y="740" fill="#94a3b8" font-size="7">claude, aider_debug, blackbox, hermes(ollama), ollama_runner, opencode, vertex_recovery</text>
+
+        <!-- Arrows: Orchestrator → Managers -->
+        <line x1="230" y1="485" x2="250" y2="485" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#ah6-amber)"/>
+        <!-- Managers → Event Hub -->
+        <line x1="380" y1="485" x2="400" y2="485" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#ah6-violet)"/>
+        <!-- Event Hub → IPC -->
+        <line x1="540" y1="485" x2="560" y2="485" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#ah6-cyan)"/>
+        <!-- Event Hub → JARVIS Scanner -->
+        <path d="M 470 520 L 470 535 L 130 535 L 130 540" fill="none" stroke="#fb923c" stroke-width="1.5" marker-end="url(#ah6-orange)"/>
+        <text x="300" y="530" fill="#94a3b8" font-size="7">scan tasks</text>
+        <!-- Event Hub → ClawdBot -->
+        <path d="M 470 520 L 470 535 L 350 535 L 350 540" fill="none" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#ah6-cyan)"/>
+        <!-- ClawdBot → Overseer -->
+        <line x1="450" y1="590" x2="470" y2="590" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#ah6-violet)"/>
+        <text x="455" y="585" fill="#a78bfa" font-size="7">watch</text>
+
+        <!-- ================================================================
+             GOOGLE AI STUDIO (Bottom right)
+             ================================================================ -->
+
+        <rect x="720" y="420" width="460" height="340" rx="12" fill="rgba(251, 191, 36, 0.03)" stroke="#fbbf24" stroke-width="1" stroke-dasharray="8,4" opacity="0.4"/>
+        <text x="732" y="438" fill="#fbbf24" font-size="10" font-weight="600" opacity="0.6">Google AI Studio + Gemini Integration</text>
+
+        <!-- AI Studio Applet Card -->
+        <rect x="730" y="450" width="440" height="120" rx="6" fill="#0f172a"/>
+        <rect x="730" y="450" width="440" height="120" rx="6" fill="rgba(251, 191, 36, 0.12)" stroke="#fbbf24" stroke-width="1.5"/>
+        <rect x="730" y="450" width="440" height="4" rx="2" fill="#fbbf24"/>
+        <text x="950" y="473" fill="white" font-size="11" font-weight="700" text-anchor="middle">AI Studio Applet</text>
+        <text x="740" y="493" fill="#fbbf24" font-size="8" font-weight="600">Gemini Code Reviewer for BTCRecover</text>
+        <text x="740" y="508" fill="#94a3b8" font-size="7">AI-powered code review for BTCRecover project</text>
+        <text x="740" y="521" fill="#94a3b8" font-size="7">Source: Google Drive (resourceId: 1PDqpLBDNCSR...)</text>
+        <text x="740" y="534" fill="#94a3b8" font-size="7">First access: 2025-09-10 | Last access: 2025-09-10</text>
+        <text x="740" y="547" fill="#fbbf24" font-size="7">Feedback on quality, security, performance via Gemini API</text>
+        <text x="740" y="562" fill="#94a3b8" font-size="7">Path: Email_Imports/jaylang085@gmail.com - Google Drive/</text>
+
+        <!-- Gemini Auth Config -->
+        <rect x="730" y="580" width="210" height="90" rx="6" fill="#0f172a"/>
+        <rect x="730" y="580" width="210" height="90" rx="6" fill="rgba(52, 211, 153, 0.1)" stroke="#34d399" stroke-width="1" opacity="0.6"/>
+        <rect x="730" y="580" width="210" height="4" rx="2" fill="#34d399"/>
+        <text x="835" y="603" fill="white" font-size="10" font-weight="700" text-anchor="middle">Gemini CLI Auth</text>
+        <text x="740" y="620" fill="#94a3b8" font-size="7">Auth type:</text>
+        <text x="800" y="620" fill="#34d399" font-size="7" font-weight="600">gemini-api-key</text>
+        <text x="740" y="635" fill="#94a3b8" font-size="7">Account:</text>
+        <text x="800" y="635" fill="#94a3b8" font-size="7">admin@208fenceandgate.com</text>
+        <text x="740" y="650" fill="#94a3b8" font-size="7">Voice mode:</text>
+        <text x="800" y="650" fill="#34d399" font-size="7">enabled</text>
+        <text x="740" y="664" fill="#94a3b8" font-size="7">Gemma router:</text>
+        <text x="800" y="664" fill="#34d399" font-size="7">auto-start enabled</text>
+
+        <!-- Windows MCP Config -->
+        <rect x="950" y="580" width="220" height="90" rx="6" fill="#0f172a"/>
+        <rect x="950" y="580" width="220" height="90" rx="6" fill="rgba(34, 211, 238, 0.1)" stroke="#22d3ee" stroke-width="1" opacity="0.6"/>
+        <rect x="950" y="580" width="220" height="4" rx="2" fill="#22d3ee"/>
+        <text x="1060" y="603" fill="white" font-size="10" font-weight="700" text-anchor="middle">Windows MCP (15 servers)</text>
+        <text x="960" y="620" fill="#22d3ee" font-size="7">• 3 IDE proxies (notebooks/viz/data-kit)</text>
+        <text x="960" y="633" fill="#fbbf24" font-size="7">• 8 remote GCP (BQ, Spanner, AlloyDB, </text>
+        <text x="960" y="644" fill="#fbbf24" font-size="7">  Dataproc, Catalog, CloudSQL, GKE, VAS)</text>
+        <text x="960" y="657" fill="#fb7185" font-size="7">• GitHub, Linear, Seq-think, CloudRun</text>
+        <text x="960" y="668" fill="#94a3b8" font-size="7">• Antimetal + Google Home Developer</text>
+
+        <!-- GenAI Project -->
+        <rect x="730" y="680" width="440" height="70" rx="6" fill="#0f172a"/>
+        <rect x="730" y="680" width="440" height="70" rx="6" fill="rgba(168, 139, 250, 0.1)" stroke="#a78bfa" stroke-width="1" opacity="0.5"/>
+        <rect x="730" y="680" width="440" height="4" rx="2" fill="#a78bfa"/>
+        <text x="950" y="703" fill="white" font-size="10" font-weight="700" text-anchor="middle">GenAI Projects + Integration Points</text>
+        <text x="740" y="720" fill="#a78bfa" font-size="7" font-weight="600">GenAIMindMapFlowBuilder</text>
+        <text x="740" y="733" fill="#94a3b8" font-size="7">~/GenAIMindMapFlowBuilder + orchestration/ copy</text>
+        <text x="740" y="745" fill="#94a3b8" font-size="7">Tracked Gemini project: ~/OneDrive/ConsolidatedDevelopment/MasterRecovery3/.gemini</text>
+
+        <!-- Cross-connections: AGY → JARVIS -->
+        <path d="M 300 410 L 300 425 L 130 425 L 130 450" fill="none" stroke="#34d399" stroke-width="1.5" stroke-dasharray="5,5" marker-end="url(#ah6-emerald)"/>
+        <text x="180" y="420" fill="#34d399" font-size="7">plugin bridge</text>
+
+        <!-- Cross-connection: AI Studio → JARVIS -->
+        <path d="M 950 570 L 950 535 L 580 535 L 580 540" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5,5" marker-end="url(#ah6-amber)"/>
+        <text x="700" y="530" fill="#fbbf24" font-size="7">code review feedback</text>
+
+        <!-- Cross-connection: AGY MCP → AI Studio -->
+        <path d="M 890 400 L 890 420 L 950 420 L 950 450" fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#ah6-cyan)"/>
+        <text x="895" y="415" fill="#22d3ee" font-size="7">shared GCP MCP</text>
+
+        <!-- Legend -->
+        <rect x="90" y="755" width="12" height="10" rx="2" fill="rgba(52, 211, 153, 0.3)" stroke="#34d399" stroke-width="1"/>
+        <text x="108" y="764" fill="#94a3b8" font-size="8">AGY Config</text>
+        <rect x="190" y="755" width="12" height="10" rx="2" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1"/>
+        <text x="208" y="764" fill="#94a3b8" font-size="8">JARVIS</text>
+        <rect x="280" y="755" width="12" height="10" rx="2" fill="rgba(251, 191, 36, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="298" y="764" fill="#94a3b8" font-size="8">Google AI Studio</text>
+        <rect x="410" y="755" width="12" height="10" rx="2" fill="rgba(34, 211, 238, 0.3)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="428" y="764" fill="#94a3b8" font-size="8">MCP Servers</text>
+        <rect x="520" y="755" width="12" height="10" rx="2" fill="rgba(168, 139, 250, 0.3)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="538" y="764" fill="#94a3b8" font-size="8">Agents/Overseer</text>
+        <line x1="640" y1="760" x2="662" y2="760" stroke="#34d399" stroke-width="1.5" stroke-dasharray="5,5"/>
+        <text x="668" y="764" fill="#94a3b8" font-size="8">Cross-system bridge</text>
+      </svg>
+    </div>
+
+    <!-- AGY + JARVIS + AI Studio Cards -->
+    <div class="cards" style="margin-top: 2rem;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>AGY Model + Limits</h3>
+        </div>
+        <ul>
+          <li>• Default: glm-5.2:cloud (custom provider)</li>
+          <li>• Fallback: gemma4:31b → gemini-2.5-pro</li>
+          <li>• Context: 131,072 tokens (128K)</li>
+          <li>• Max turns: 1,000 · Max tokens: 8,192</li>
+          <li>• Memory limit: 8,192 MB</li>
+          <li>• All timeouts: 600s (exec/mcp/terminal)</li>
+          <li>• Remote control: homelab-ultima-venus</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot orange"></div>
+          <h3>AGY Settings + Trust</h3>
+        </div>
+        <ul>
+          <li>• GCP: master-recovery-hub-2026 (global)</li>
+          <li>• Theme: tokyo night · Telemetry: off</li>
+          <li>• Non-workspace access: allowed</li>
+          <li>• Trusted: /home/conor-ops (WSL2)</li>
+          <li>• Trusted: /mnt/c/Users/jayla (Windows)</li>
+          <li>• 50+ permission allow-list entries</li>
+          <li>• Brain: 4 conversation sessions stored</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot cyan"></div>
+          <h3>AGY MCP (12 Servers)</h3>
+        </div>
+        <ul>
+          <li>• 3 IDE proxies (notebooks/viz/data-kit)</li>
+          <li>• 6 remote GCP (BQ/Spanner/GKE/VAS/Secret/Storage)</li>
+          <li>• cloudrun (npx @google-cloud/cloud-run-mcp)</li>
+          <li>• github-mcp-server (Docker, PAT auth)</li>
+          <li>• linear-mcp-server (mcp-remote SSE)</li>
+          <li>• sequential-thinking (npx)</li>
+          <li>• All timeouts: 600s · All enabled</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot violet"></div>
+          <h3>Cross-Agentic Bridge Plugin</h3>
+        </div>
+        <ul>
+          <li>• Version 1.1.0 · skills directory linked</li>
+          <li>• Bridges AGY SDK ↔ GCP project</li>
+          <li>• Bridges MasterRecoveryAgents ↔ Ollama</li>
+          <li>• MCP: cloudrun (npx, project env)</li>
+          <li>• MCP: bigquery (channel.io, project env)</li>
+          <li>• Project: master-recovery-hub-2026</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot orange"></div>
+          <h3>JARVIS Architecture</h3>
+        </div>
+        <ul>
+          <li>• BTC/LTC wallet recovery orchestration</li>
+          <li>• 3-tier hierarchy: Orchestrator → Mgrs → Agents</li>
+          <li>• 25 agents, 7 providers (Google/OpenRouter/Anthropic/local)</li>
+          <li>• Event Hub: ws://127.0.0.1:18789 (pub/sub)</li>
+          <li>• SQLite IPC: 40MB ipc_state.db</li>
+          <li>• Scanner: 16 workers, 347K/sec, BIP44/49/84</li>
+          <li>• master_control.py: status, test-comm, sweep</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot rose"></div>
+          <h3>JARVIS Agent Fleet</h3>
+        </div>
+        <ul>
+          <li>• Google: gemini-orchestrator, openclaw, analysts</li>
+          <li>• OpenRouter: seed_finder, mutator, researcher</li>
+          <li>• Anthropic: claude_reasoner (3.5-sonnet)</li>
+          <li>• Ollama: hermes (nous-hermes2), ollama_runner (llama3)</li>
+          <li>• Local: bitlocker, message_broker, overseer</li>
+          <li>• Blackbox + Aider (deepseek-r1) + OpenCode</li>
+          <li>• Model fusion: 5 runtimes (codex/gemini/claude/aider/vertex)</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot amber"></div>
+          <h3>Google AI Studio</h3>
+        </div>
+        <ul>
+          <li>• Applet: Gemini Code Reviewer for BTCRecover</li>
+          <li>• Source: Google Drive (resourceId: 1PDqp...)</li>
+          <li>• Reviews code quality, security, performance</li>
+          <li>• Auth: gemini-api-key (admin@208fenceandgate.com)</li>
+          <li>• GenAIMindMapFlowBuilder project tracked</li>
+          <li>• Windows .gemini: 15 MCP servers, 9 plugins</li>
+          <li>• Experimental: voice mode, Gemma router, auto-memory</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>Windows Gemini Config</h3>
+        </div>
+        <ul>
+          <li>• Auth: gemini-api-key · Permanent tool approval</li>
+          <li>• 9 plugins enabled (Flutter, Firebase, Maps, etc.)</li>
+          <li>• 7 tracked projects (WSL, Windows, Cloud SDK)</li>
+          <li>• Artifact review: TURBO mode</li>
+          <li>• Session retention: 120 days</li>
+          <li>• Context: 20K dir discovery, 4M truncation</li>
+          <li>• Remote: homelab-vivid-planet</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         SECTION 7: COMPLETE ECOSYSTEM MAP
+         ================================================================ -->
+
+    <!-- Section 7: Ecosystem Map Diagram -->
+    <div class="diagram-container" style="margin-top: 2rem;">
+      <svg viewBox="0 0 1200 750">
+        <defs>
+          <pattern id="grid7" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+          <marker id="ah7-slate" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+          </marker>
+          <marker id="ah7-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee" />
+          </marker>
+          <marker id="ah7-emerald" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#34d399" />
+          </marker>
+          <marker id="ah7-violet" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa" />
+          </marker>
+          <marker id="ah7-amber" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24" />
+          </marker>
+          <marker id="ah7-rose" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185" />
+          </marker>
+          <marker id="ah7-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb923c" />
+          </marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid7)" />
+
+        <!-- Section title bar -->
+        <rect x="50" y="15" width="1100" height="35" rx="6" fill="#0f172a"/>
+        <rect x="50" y="15" width="1100" height="35" rx="6" fill="rgba(34, 211, 238, 0.15)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="600" y="37" fill="#22d3ee" font-size="11" font-weight="700" text-anchor="middle">COMPLETE ECOSYSTEM MAP — SPARK STUDIO · JULES · CLAUDE · CLINE · ANTIGRAVITY · CLOUD STORAGE · PROJECT INVENTORY</text>
+
+        <!-- ================================================================
+             CENTER: glm-5.2:cloud HUB (Ollama)
+             ================================================================ -->
+        <rect x="480" y="340" width="240" height="70" rx="10" fill="#0f172a"/>
+        <rect x="480" y="340" width="240" height="70" rx="10" fill="rgba(251, 146, 60, 0.15)" stroke="#fb923c" stroke-width="1.5"/>
+        <rect x="480" y="340" width="240" height="4" rx="2" fill="#fb923c"/>
+        <text x="600" y="362" fill="#fb923c" font-size="11" font-weight="700" text-anchor="middle">GLM-5.2:CLOUD (OLLAMA)</text>
+        <text x="600" y="378" fill="#94a3b8" font-size="9" text-anchor="middle">KEY FINDING: ALL AI TOOLS USE</text>
+        <text x="600" y="392" fill="#94a3b8" font-size="9" text-anchor="middle">glm-5.2:cloud VIA OLLAMA PROVIDER</text>
+
+        <!-- ================================================================
+             (1) SPARK STUDIO (Top-Left)
+             ================================================================ -->
+        <rect x="30" y="60" width="280" height="210" rx="8" fill="#0f172a"/>
+        <rect x="30" y="60" width="280" height="210" rx="8" fill="rgba(34, 211, 238, 0.08)" stroke="#22d3ee" stroke-width="1" opacity="0.7"/>
+        <rect x="30" y="60" width="280" height="4" rx="2" fill="#22d3ee"/>
+        <text x="170" y="82" fill="#22d3ee" font-size="11" font-weight="700" text-anchor="middle">SPARK STUDIO</text>
+        <text x="42" y="100" fill="#94a3b8" font-size="9">Google AI Studio fullstack applet</text>
+        <text x="42" y="114" fill="#34d399" font-size="9">▸ React + Express + Vite</text>
+        <text x="42" y="128" fill="#a78bfa" font-size="9">▸ Firebase + Cloud SQL + Gemini API</text>
+        <text x="42" y="142" fill="#fbbf24" font-size="9">▸ GCP: gen-lang-client-0865392318</text>
+        <text x="42" y="156" fill="#22d3ee" font-size="9">▸ ai.studio/apps/732a3e30</text>
+        <text x="42" y="170" fill="#fb923c" font-size="9">▸ Built-in MCP server</text>
+        <text x="42" y="184" fill="#22d3ee" font-size="9">▸ Catalyst DAG visualization</text>
+        <text x="42" y="198" fill="#fbbf24" font-size="9">▸ Google Drive integration</text>
+        <text x="42" y="212" fill="#94a3b8" font-size="8" opacity="0.7">Hosts JulesAgentModal.tsx (embedded)</text>
+        <text x="42" y="226" fill="#94a3b8" font-size="8" opacity="0.7">Identity: jaylang085@gmail.com</text>
+
+        <!-- ================================================================
+             (2) JULES AI AGENT (Top-Center-Left)
+             ================================================================ -->
+        <rect x="330" y="60" width="250" height="210" rx="8" fill="#0f172a"/>
+        <rect x="330" y="60" width="250" height="210" rx="8" fill="rgba(52, 211, 153, 0.08)" stroke="#34d399" stroke-width="1" opacity="0.7"/>
+        <rect x="330" y="60" width="250" height="4" rx="2" fill="#34d399"/>
+        <text x="455" y="82" fill="#34d399" font-size="11" font-weight="700" text-anchor="middle">JULES AI AGENT</text>
+        <text x="342" y="100" fill="#94a3b8" font-size="9">Standalone CLI at npm/jules</text>
+        <text x="342" y="114" fill="#34d399" font-size="9">▸ Config: .jules/config.yaml</text>
+        <text x="342" y="128" fill="#22d3ee" font-size="9">▸ Embedded in Spark Studio</text>
+        <text x="342" y="142" fill="#22d3ee" font-size="9">  as JulesAgentModal.tsx</text>
+        <text x="342" y="156" fill="#34d399" font-size="9">▸ Autonomous Spark Engineer</text>
+        <text x="342" y="170" fill="#94a3b8" font-size="9">▸ Deploys &amp; modifies Spark applets</text>
+        <text x="342" y="184" fill="#fbbf24" font-size="9">▸ GCP project access</text>
+        <text x="342" y="198" fill="#fb923c" font-size="9">▸ MCP server integration</text>
+        <text x="342" y="212" fill="#94a3b8" font-size="8" opacity="0.7">Bridges Spark Studio ↔ GCP ↔ Drive</text>
+        <text x="342" y="226" fill="#94a3b8" font-size="8" opacity="0.7">Model: glm-5.2:cloud via ollama</text>
+
+        <!-- ================================================================
+             (3) JAYLANG085 IDENTITY (Top-Center-Right)
+             ================================================================ -->
+        <rect x="600" y="60" width="240" height="210" rx="8" fill="#0f172a"/>
+        <rect x="600" y="60" width="240" height="210" rx="8" fill="rgba(251, 113, 133, 0.08)" stroke="#fb7185" stroke-width="1" opacity="0.7"/>
+        <rect x="600" y="60" width="240" height="4" rx="2" fill="#fb7185"/>
+        <text x="720" y="82" fill="#fb7185" font-size="11" font-weight="700" text-anchor="middle">JAYLANG085@GMAIL.COM</text>
+        <text x="612" y="100" fill="#94a3b8" font-size="9">Identity / Account Anchor</text>
+        <text x="612" y="114" fill="#fb7185" font-size="9">▸ Deployed enterprise-app</text>
+        <text x="612" y="128" fill="#34d399" font-size="9">▸ Modified klarity</text>
+        <text x="612" y="142" fill="#fbbf24" font-size="9">▸ Google Drive exports</text>
+        <text x="612" y="156" fill="#fbbf24" font-size="9">▸ Dropbox exports</text>
+        <text x="612" y="170" fill="#22d3ee" font-size="9">▸ Spark Studio owner</text>
+        <text x="612" y="184" fill="#34d399" font-size="9">▸ GCP project linked</text>
+        <text x="612" y="198" fill="#94a3b8" font-size="9">▸ Gemini API key holder</text>
+        <text x="612" y="212" fill="#94a3b8" font-size="8" opacity="0.7">Auth: admin@208fenceandgate.com</text>
+        <text x="612" y="226" fill="#94a3b8" font-size="8" opacity="0.7">Unifies cloud + AI Studio identity</text>
+
+        <!-- ================================================================
+             (4) CLAUDE (Top-Right)
+             ================================================================ -->
+        <rect x="860" y="60" width="310" height="210" rx="8" fill="#0f172a"/>
+        <rect x="860" y="60" width="310" height="210" rx="8" fill="rgba(167, 139, 250, 0.08)" stroke="#a78bfa" stroke-width="1" opacity="0.7"/>
+        <rect x="860" y="60" width="310" height="4" rx="2" fill="#a78bfa"/>
+        <text x="1015" y="82" fill="#a78bfa" font-size="11" font-weight="700" text-anchor="middle">CLAUDE (ANTHROPIC CLI)</text>
+        <text x="872" y="100" fill="#94a3b8" font-size="9">WSL .claude/ — primary instance</text>
+        <text x="872" y="114" fill="#fb923c" font-size="9">▸ glm-5.2:cloud (ollama provider)</text>
+        <text x="872" y="128" fill="#fb923c" font-size="9">▸ 13 MCP servers</text>
+        <text x="872" y="142" fill="#34d399" font-size="9">▸ Plugins + sessions</text>
+        <text x="872" y="156" fill="#94a3b8" font-size="9">Windows .claude/ — secondary</text>
+        <text x="872" y="170" fill="#a78bfa" font-size="9">▸ 171 skills installed</text>
+        <text x="872" y="184" fill="#fbbf24" font-size="9">▸ GitKraken integration</text>
+        <text x="872" y="198" fill="#22d3ee" font-size="9">▸ Dark-daltonized theme</text>
+        <text x="872" y="212" fill="#94a3b8" font-size="8" opacity="0.7">Cross-platform: WSL2 + Windows host</text>
+        <text x="872" y="226" fill="#94a3b8" font-size="8" opacity="0.7">Shared model: glm-5.2:cloud via ollama</text>
+
+        <!-- ================================================================
+             (5) CLINE (Mid-Left)
+             ================================================================ -->
+        <rect x="30" y="290" width="200" height="100" rx="8" fill="#0f172a"/>
+        <rect x="30" y="290" width="200" height="100" rx="8" fill="rgba(52, 211, 153, 0.08)" stroke="#34d399" stroke-width="1" opacity="0.7"/>
+        <rect x="30" y="290" width="200" height="4" rx="2" fill="#34d399"/>
+        <text x="130" y="312" fill="#34d399" font-size="11" font-weight="700" text-anchor="middle">CLINE</text>
+        <text x="42" y="330" fill="#94a3b8" font-size="9">.cline/ directory</text>
+        <text x="42" y="344" fill="#fb923c" font-size="9">▸ ollama: glm-5.2:cloud</text>
+        <text x="42" y="358" fill="#34d399" font-size="9">▸ cache / db / sessions</text>
+        <text x="42" y="372" fill="#94a3b8" font-size="8" opacity="0.7">Lightweight coding agent</text>
+
+        <!-- ================================================================
+             (6) ANTIGRAVITY IDE (Mid-Right)
+             ================================================================ -->
+        <rect x="250" y="290" width="220" height="100" rx="8" fill="#0f172a"/>
+        <rect x="250" y="290" width="220" height="100" rx="8" fill="rgba(52, 211, 153, 0.08)" stroke="#34d399" stroke-width="1" opacity="0.7"/>
+        <rect x="250" y="290" width="220" height="4" rx="2" fill="#34d399"/>
+        <text x="360" y="312" fill="#34d399" font-size="11" font-weight="700" text-anchor="middle">ANTIGRAVITY IDE</text>
+        <text x="262" y="330" fill="#34d399" font-size="9">▸ 35 extensions</text>
+        <text x="262" y="344" fill="#fbbf24" font-size="9">▸ Google Cloud Tools datacloud 0.9.0</text>
+        <text x="262" y="358" fill="#22d3ee" font-size="9">▸ Gemini CLI companion</text>
+        <text x="262" y="372" fill="#94a3b8" font-size="8" opacity="0.7">Jupyter · K8s · Docker · MCP proxy</text>
+
+        <!-- ================================================================
+             (7) VS CODE (Far Mid-Right)
+             ================================================================ -->
+        <rect x="740" y="290" width="180" height="100" rx="8" fill="#0f172a"/>
+        <rect x="740" y="290" width="180" height="100" rx="8" fill="rgba(148, 163, 184, 0.08)" stroke="#94a3b8" stroke-width="1" opacity="0.5"/>
+        <rect x="740" y="290" width="180" height="4" rx="2" fill="#94a3b8"/>
+        <text x="830" y="312" fill="#94a3b8" font-size="11" font-weight="700" text-anchor="middle">VS CODE</text>
+        <text x="752" y="330" fill="#94a3b8" font-size="9">▸ Installed</text>
+        <text x="752" y="344" fill="#94a3b8" font-size="9">▸ Minimal config</text>
+        <text x="752" y="358" fill="#94a3b8" font-size="8" opacity="0.7">Fallback editor</text>
+
+        <!-- ================================================================
+             (8) ONEDRIVE (Bottom-Left)
+             ================================================================ -->
+        <rect x="30" y="440" width="250" height="120" rx="8" fill="#0f172a"/>
+        <rect x="30" y="440" width="250" height="120" rx="8" fill="rgba(34, 211, 238, 0.08)" stroke="#22d3ee" stroke-width="1" opacity="0.7"/>
+        <rect x="30" y="440" width="250" height="4" rx="2" fill="#22d3ee"/>
+        <text x="155" y="462" fill="#22d3ee" font-size="11" font-weight="700" text-anchor="middle">ONEDRIVE</text>
+        <text x="42" y="480" fill="#22d3ee" font-size="9">▸ 13 top-level directories</text>
+        <text x="42" y="494" fill="#fbbf24" font-size="9">▸ Microsoft Copilot Chat Files</text>
+        <text x="42" y="508" fill="#94a3b8" font-size="9">▸ Windows mount: /mnt/c/</text>
+        <text x="42" y="522" fill="#94a3b8" font-size="8" opacity="0.7">Cloud sync via Microsoft account</text>
+        <text x="42" y="536" fill="#94a3b8" font-size="8" opacity="0.7">Accessible from WSL2 + Windows</text>
+
+        <!-- ================================================================
+             (9) DROPBOX (Bottom-Center-Left)
+             ================================================================ -->
+        <rect x="300" y="440" width="220" height="120" rx="8" fill="#0f172a"/>
+        <rect x="300" y="440" width="220" height="120" rx="8" fill="rgba(34, 211, 238, 0.06)" stroke="#22d3ee" stroke-width="1" opacity="0.5"/>
+        <rect x="300" y="440" width="220" height="4" rx="2" fill="#22d3ee"/>
+        <text x="410" y="462" fill="#22d3ee" font-size="11" font-weight="700" text-anchor="middle">DROPBOX</text>
+        <text x="312" y="480" fill="#94a3b8" font-size="9">▸ Folder only — no API</text>
+        <text x="312" y="494" fill="#fbbf24" font-size="9">▸ Export target (from GDrive)</text>
+        <text x="312" y="508" fill="#94a3b8" font-size="9">▸ Manual sync</text>
+        <text x="312" y="522" fill="#94a3b8" font-size="8" opacity="0.7">No programmatic integration</text>
+        <text x="312" y="536" fill="#94a3b8" font-size="8" opacity="0.7">File dump / backup destination</text>
+
+        <!-- ================================================================
+             (10) PROJECT INVENTORY SUMMARY (Bottom-Right)
+             ================================================================ -->
+        <rect x="540" y="440" width="280" height="120" rx="8" fill="#0f172a"/>
+        <rect x="540" y="440" width="280" height="120" rx="8" fill="rgba(251, 191, 36, 0.08)" stroke="#fbbf24" stroke-width="1" opacity="0.7"/>
+        <rect x="540" y="440" width="280" height="4" rx="2" fill="#fbbf24"/>
+        <text x="680" y="462" fill="#fbbf24" font-size="11" font-weight="700" text-anchor="middle">PROJECT INVENTORY — 112 ITEMS</text>
+        <text x="552" y="480" fill="#fb923c" font-size="9">▸ 35 ML (machine learning)</text>
+        <text x="552" y="494" fill="#22d3ee" font-size="9">▸ 10 POC (proof of concept)</text>
+        <text x="552" y="508" fill="#94a3b8" font-size="9">▸ 29 DOC (documentation)</text>
+        <text x="552" y="522" fill="#34d399" font-size="9">▸ 28 TOOL (utilities/scripts)</text>
+        <text x="552" y="536" fill="#fb7185" font-size="9">▸ 10 BACKUP (archives)</text>
+
+        <!-- ================================================================
+             (11) KEY FINDING BANNER (Bottom-Right-Far)
+             ================================================================ -->
+        <rect x="840" y="440" width="330" height="120" rx="8" fill="#0f172a"/>
+        <rect x="840" y="440" width="330" height="120" rx="8" fill="rgba(251, 146, 60, 0.10)" stroke="#fb923c" stroke-width="1.5"/>
+        <rect x="840" y="440" width="330" height="4" rx="2" fill="#fb923c"/>
+        <text x="1005" y="462" fill="#fb923c" font-size="11" font-weight="700" text-anchor="middle">🔑 KEY FINDING</text>
+        <text x="852" y="482" fill="#fb923c" font-size="10" font-weight="600">All AI tools converge on a single model:</text>
+        <text x="852" y="498" fill="#fb923c" font-size="11" font-weight="700">glm-5.2:cloud via Ollama provider</text>
+        <text x="852" y="514" fill="#94a3b8" font-size="9">Claude · Cline · Jules · Antigravity · Spark</text>
+        <text x="852" y="528" fill="#94a3b8" font-size="9">All route through local ollama daemon</text>
+        <text x="852" y="542" fill="#94a3b8" font-size="8" opacity="0.7">Unified model = consistent behavior across tools</text>
+
+        <!-- ================================================================
+             CONNECTING ARROWS
+             ================================================================ -->
+
+        <!-- Spark Studio → GLM hub -->
+        <line x1="170" y1="270" x2="500" y2="340" stroke="#fb923c" stroke-width="1.5" marker-end="url(#ah7-orange)" opacity="0.7"/>
+        <!-- Jules → GLM hub -->
+        <line x1="455" y1="270" x2="560" y2="340" stroke="#fb923c" stroke-width="1.5" marker-end="url(#ah7-orange)" opacity="0.7"/>
+        <!-- Claude → GLM hub -->
+        <line x1="1015" y1="270" x2="700" y2="340" stroke="#fb923c" stroke-width="1.5" marker-end="url(#ah7-orange)" opacity="0.7"/>
+        <!-- Cline → GLM hub -->
+        <line x1="130" y1="390" x2="500" y2="375" stroke="#fb923c" stroke-width="1.5" marker-end="url(#ah7-orange)" opacity="0.7"/>
+        <!-- Antigravity → GLM hub -->
+        <line x1="360" y1="390" x2="540" y2="380" stroke="#fb923c" stroke-width="1.5" marker-end="url(#ah7-orange)" opacity="0.7"/>
+        <!-- VS Code → GLM hub (dashed, minimal) -->
+        <line x1="830" y1="390" x2="700" y2="375" stroke="#64748b" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#ah7-slate)" opacity="0.4"/>
+
+        <!-- Jules ↔ Spark Studio (embeds) -->
+        <line x1="330" y1="165" x2="310" y2="165" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah7-emerald)" opacity="0.6"/>
+        <line x1="310" y1="175" x2="330" y2="175" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah7-emerald)" opacity="0.6"/>
+
+        <!-- Identity → Spark Studio -->
+        <line x1="600" y1="165" x2="310" y2="165" stroke="#fb7185" stroke-width="1" stroke-dasharray="5,3" marker-end="url(#ah7-rose)" opacity="0.4"/>
+        <!-- Identity → GDrive/OneDrive export -->
+        <line x1="720" y1="270" x2="155" y2="440" stroke="#fbbf24" stroke-width="1" stroke-dasharray="5,3" marker-end="url(#ah7-amber)" opacity="0.3"/>
+        <!-- Identity → Dropbox export -->
+        <line x1="680" y1="270" x2="410" y2="440" stroke="#fbbf24" stroke-width="1" stroke-dasharray="5,3" marker-end="url(#ah7-amber)" opacity="0.3"/>
+
+        <!-- Spark Studio → Google Drive (integration) -->
+        <line x1="170" y1="270" x2="155" y2="440" stroke="#22d3ee" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#ah7-cyan)" opacity="0.4"/>
+
+        <!-- ================================================================
+             LEGEND (Bottom strip)
+             ================================================================ -->
+        <rect x="50" y="600" width="1100" height="130" rx="6" fill="#0f172a" opacity="0.8"/>
+        <rect x="50" y="600" width="1100" height="130" rx="6" fill="none" stroke="#1e293b" stroke-width="1"/>
+
+        <text x="70" y="622" fill="#64748b" font-size="10" font-weight="600">LEGEND</text>
+
+        <!-- Color swatches -->
+        <rect x="70" y="632" width="12" height="12" rx="2" fill="#22d3ee"/>
+        <text x="88" y="642" fill="#94a3b8" font-size="9">Cyan = Frontend / App / Cloud Storage</text>
+
+        <rect x="70" y="650" width="12" height="12" rx="2" fill="#34d399"/>
+        <text x="88" y="660" fill="#94a3b8" font-size="9">Emerald = Backend / CLI Agent</text>
+
+        <rect x="70" y="668" width="12" height="12" rx="2" fill="#a78bfa"/>
+        <text x="88" y="678" fill="#94a3b8" font-size="9">Violet = Claude / IDE Config</text>
+
+        <rect x="70" y="686" width="12" height="12" rx="2" fill="#fbbf24"/>
+        <text x="88" y="696" fill="#94a3b8" font-size="9">Amber = Cloud / GCP / Inventory</text>
+
+        <rect x="70" y="704" width="12" height="12" rx="2" fill="#fb7185"/>
+        <text x="88" y="714" fill="#94a3b8" font-size="9">Rose = Identity / Security</text>
+
+        <rect x="350" y="632" width="12" height="12" rx="2" fill="#fb923c"/>
+        <text x="368" y="642" fill="#94a3b8" font-size="9">Orange = Model Hub (glm-5.2:cloud)</text>
+
+        <!-- Arrow legend -->
+        <line x1="350" y1="656" x2="380" y2="656" stroke="#fb923c" stroke-width="1.5" marker-end="url(#ah7-orange)"/>
+        <text x="390" y="660" fill="#94a3b8" font-size="9">→ Model routing (ollama)</text>
+
+        <line x1="350" y1="672" x2="380" y2="672" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah7-emerald)"/>
+        <text x="390" y="676" fill="#94a3b8" font-size="9">→ Embeds / Integration</text>
+
+        <line x1="350" y1="688" x2="380" y2="688" stroke="#fbbf24" stroke-width="1" stroke-dasharray="5,3" marker-end="url(#ah7-amber)"/>
+        <text x="390" y="692" fill="#94a3b8" font-size="9">→ Export / Sync</text>
+
+        <line x1="350" y1="704" x2="380" y2="704" stroke="#64748b" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#ah7-slate)"/>
+        <text x="390" y="708" fill="#94a3b8" font-size="9">→ Minimal / Fallback</text>
+
+        <!-- Stats -->
+        <text x="640" y="632" fill="#64748b" font-size="10" font-weight="600">ECOSYSTEM STATS</text>
+        <text x="640" y="650" fill="#22d3ee" font-size="9">▪ 10 components mapped</text>
+        <text x="640" y="664" fill="#34d399" font-size="9">▪ 5 AI tools → 1 unified model</text>
+        <text x="640" y="678" fill="#fbbf24" font-size="9">▪ 112 projects inventoried</text>
+        <text x="640" y="692" fill="#fb7185" font-size="9">▪ 1 identity: jaylang085@gmail.com</text>
+        <text x="640" y="706" fill="#fb923c" font-size="9">▪ 2 cloud storage (OneDrive + Dropbox)</text>
+
+        <text x="900" y="632" fill="#64748b" font-size="10" font-weight="600">CATEGORIES</text>
+        <text x="900" y="650" fill="#fb923c" font-size="9">ML: 35 · POC: 10</text>
+        <text x="900" y="664" fill="#22d3ee" font-size="9">DOC: 29 · TOOL: 28</text>
+        <text x="900" y="678" fill="#fb7185" font-size="9">BACKUP: 10</text>
+        <text x="900" y="692" fill="#94a3b8" font-size="9">Total: 112 items</text>
+        <text x="900" y="706" fill="#94a3b8" font-size="8" opacity="0.7">Across all storage surfaces</text>
+      </svg>
+    </div>
+
+    <!-- Ecosystem Map Info Cards -->
+    <div class="cards" style="margin-top: 2rem;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot cyan"></div>
+          <h3>Spark Studio</h3>
+        </div>
+        <ul>
+          <li>• Google AI Studio fullstack applet</li>
+          <li>• Stack: React + Express + Vite</li>
+          <li>• Data: Firebase + Cloud SQL + Gemini API</li>
+          <li>• GCP: gen-lang-client-0865392318</li>
+          <li>• URL: ai.studio/apps/732a3e30</li>
+          <li>• Built-in MCP server</li>
+          <li>• Catalyst DAG visualization</li>
+          <li>• Google Drive integration</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>Jules Agent</h3>
+        </div>
+        <ul>
+          <li>• Standalone CLI at npm/jules</li>
+          <li>• Config: .jules/config.yaml</li>
+          <li>• Embedded in Spark Studio (JulesAgentModal.tsx)</li>
+          <li>• Autonomous Spark Engineer</li>
+          <li>• Deploys &amp; modifies applets</li>
+          <li>• GCP project access</li>
+          <li>• MCP server integration</li>
+          <li>• Model: glm-5.2:cloud via ollama</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot violet"></div>
+          <h3>Claude + Cline</h3>
+        </div>
+        <ul>
+          <li>• Claude WSL .claude/ — 13 MCP servers</li>
+          <li>• Claude Windows — 171 skills, GitKraken</li>
+          <li>• Dark-daltonized theme</li>
+          <li>• Cline .cline/ — ollama: glm-5.2:cloud</li>
+          <li>• Cline: cache / db / sessions</li>
+          <li>• Both use glm-5.2:cloud via ollama</li>
+          <li>• Cross-platform: WSL2 + Windows</li>
+          <li>• Plugins + conversation sessions</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>Antigravity IDE</h3>
+        </div>
+        <ul>
+          <li>• 35 extensions installed</li>
+          <li>• Google Cloud Tools datacloud 0.9.0</li>
+          <li>• Gemini CLI companion</li>
+          <li>• Jupyter notebook support</li>
+          <li>• Kubernetes + Docker integration</li>
+          <li>• MCP proxy bundle</li>
+          <li>• Model: glm-5.2:cloud via ollama</li>
+          <li>• VS Code: installed, minimal config</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot amber"></div>
+          <h3>Cloud Storage</h3>
+        </div>
+        <ul>
+          <li>• OneDrive: 13 top-level dirs</li>
+          <li>• OneDrive: Microsoft Copilot Chat Files</li>
+          <li>• OneDrive: Windows mount /mnt/c/</li>
+          <li>• Dropbox: folder only, no API</li>
+          <li>• Dropbox: export target from GDrive</li>
+          <li>• Google Drive: Spark Studio integration</li>
+          <li>• Identity: jaylang085@gmail.com</li>
+          <li>• Exports to Drive + Dropbox</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot amber"></div>
+          <h3>Project Inventory</h3>
+        </div>
+        <ul>
+          <li>• Total: 112 items catalogued</li>
+          <li>• ML (machine learning): 35</li>
+          <li>• POC (proof of concept): 10</li>
+          <li>• DOC (documentation): 29</li>
+          <li>• TOOL (utilities/scripts): 28</li>
+          <li>• BACKUP (archives): 10</li>
+          <li>• Key finding: all AI tools use</li>
+          <li>• glm-5.2:cloud via ollama</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         SECTION 8: JARVIS — MASTERRECOVERYAGENTS FLEET
+         ================================================================ -->
+
+    <!-- Section 8: JARVIS Fleet Diagram -->
+    <div class="diagram-container" style="margin-top: 2rem;">
+      <svg viewBox="0 0 1200 700">
+        <defs>
+          <pattern id="grid8" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+          <marker id="ah8-slate" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+          </marker>
+          <marker id="ah8-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee" />
+          </marker>
+          <marker id="ah8-emerald" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#34d399" />
+          </marker>
+          <marker id="ah8-violet" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa" />
+          </marker>
+          <marker id="ah8-amber" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24" />
+          </marker>
+          <marker id="ah8-rose" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185" />
+          </marker>
+          <marker id="ah8-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb923c" />
+          </marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid8)" />
+
+        <!-- Section title bar -->
+        <rect x="50" y="15" width="1100" height="35" rx="6" fill="#0f172a"/>
+        <rect x="50" y="15" width="1100" height="35" rx="6" fill="rgba(251, 191, 36, 0.15)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="600" y="37" fill="#fbbf24" font-size="11" font-weight="700" text-anchor="middle">JARVIS — MASTERRECOVERYAGENTS · 29-AGENT FLEET · HIERARCHY v3.0 · GEMINI ORCHESTRATED MODE</text>
+
+        <!-- ================================================================
+             LAYER 1: JARVIS OVERSEER (Top)
+             ================================================================ -->
+        <rect x="400" y="60" width="400" height="55" rx="8" fill="#0f172a"/>
+        <rect x="400" y="60" width="400" height="55" rx="8" fill="rgba(251, 191, 36, 0.12)" stroke="#fbbf24" stroke-width="1.5"/>
+        <rect x="400" y="60" width="400" height="3" rx="1.5" fill="#fbbf24"/>
+        <text x="600" y="80" fill="#fbbf24" font-size="11" font-weight="700" text-anchor="middle">JARVIS OVERSEER · jarvis_overseer</text>
+        <text x="600" y="96" fill="#94a3b8" font-size="9" text-anchor="middle">Watch interval: 30s · Correction triggers: stall &gt;5min, strategy unchanged &gt;10 iters, blocked &gt;30min</text>
+        <text x="600" y="108" fill="#fb7185" font-size="8" text-anchor="middle" opacity="0.8">scripts/agent_hermes_overseer.py</text>
+
+        <!-- Overseer → Orchestrator arrow -->
+        <line x1="600" y1="115" x2="600" y2="135" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#ah8-amber)"/>
+
+        <!-- ================================================================
+             LAYER 2: GEMINI ORCHESTRATOR
+             ================================================================ -->
+        <rect x="450" y="135" width="300" height="50" rx="8" fill="#0f172a"/>
+        <rect x="450" y="135" width="300" height="50" rx="8" fill="rgba(34, 211, 238, 0.12)" stroke="#22d3ee" stroke-width="1.5"/>
+        <rect x="450" y="135" width="300" height="3" rx="1.5" fill="#22d3ee"/>
+        <text x="600" y="155" fill="#22d3ee" font-size="11" font-weight="700" text-anchor="middle">GEMINI ORCHESTRATOR</text>
+        <text x="600" y="170" fill="#94a3b8" font-size="9" text-anchor="middle">Supreme Orchestrator · Directs managers · Final execution decisions</text>
+        <text x="600" y="180" fill="#64748b" font-size="8" text-anchor="middle" opacity="0.7">gemini_orchestrator.py</text>
+
+        <!-- Orchestrator → Managers (3 arrows) -->
+        <line x1="520" y1="185" x2="280" y2="210" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#ah8-cyan)"/>
+        <line x1="600" y1="185" x2="600" y2="210" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#ah8-cyan)"/>
+        <line x1="680" y1="185" x2="920" y2="210" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#ah8-cyan)"/>
+
+        <!-- ================================================================
+             LAYER 3: MANAGERS (Claude, Copilot, Codex)
+             ================================================================ -->
+        <!-- Claude Manager -->
+        <rect x="130" y="210" width="300" height="50" rx="8" fill="#0f172a"/>
+        <rect x="130" y="210" width="300" height="50" rx="8" fill="rgba(167, 139, 250, 0.12)" stroke="#a78bfa" stroke-width="1.5"/>
+        <rect x="130" y="210" width="300" height="3" rx="1.5" fill="#a78bfa"/>
+        <text x="280" y="230" fill="#a78bfa" font-size="11" font-weight="700" text-anchor="middle">CLAUDE · Strategic Manager</text>
+        <text x="280" y="245" fill="#94a3b8" font-size="9" text-anchor="middle">Code review · Planning · Cryptographic execution paths</text>
+        <text x="280" y="255" fill="#64748b" font-size="8" text-anchor="middle" opacity="0.7">claude_reasoner</text>
+
+        <!-- Copilot Manager -->
+        <rect x="450" y="210" width="300" height="50" rx="8" fill="#0f172a"/>
+        <rect x="450" y="210" width="300" height="50" rx="8" fill="rgba(52, 211, 153, 0.12)" stroke="#34d399" stroke-width="1.5"/>
+        <rect x="450" y="210" width="300" height="3" rx="1.5" fill="#34d399"/>
+        <text x="600" y="230" fill="#34d399" font-size="11" font-weight="700" text-anchor="middle">COPILOT · Integration Manager</text>
+        <text x="600" y="245" fill="#94a3b8" font-size="9" text-anchor="middle">IDE alignment · Workspace context · Inline workflow</text>
+        <text x="600" y="255" fill="#64748b" font-size="8" text-anchor="middle" opacity="0.7">copilot_manager.py</text>
+
+        <!-- Codex Manager -->
+        <rect x="770" y="210" width="300" height="50" rx="8" fill="#0f172a"/>
+        <rect x="770" y="210" width="300" height="50" rx="8" fill="rgba(251, 146, 60, 0.12)" stroke="#fb923c" stroke-width="1.5"/>
+        <rect x="770" y="210" width="300" height="3" rx="1.5" fill="#fb923c"/>
+        <text x="920" y="230" fill="#fb923c" font-size="11" font-weight="700" text-anchor="middle">CODEX · Syntax &amp; Logic Manager</text>
+        <text x="920" y="245" fill="#94a3b8" font-size="9" text-anchor="middle">Script validation · Legacy parsing · Syntax migration</text>
+        <text x="920" y="255" fill="#64748b" font-size="8" text-anchor="middle" opacity="0.7">codex agent</text>
+
+        <!-- Managers → Agents (arrows) -->
+        <line x1="280" y1="260" x2="200" y2="285" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#ah8-violet)"/>
+        <line x1="280" y1="260" x2="420" y2="285" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#ah8-violet)"/>
+        <line x1="600" y1="260" x2="600" y2="285" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah8-emerald)"/>
+        <line x1="920" y1="260" x2="800" y2="285" stroke="#fb923c" stroke-width="1.5" marker-end="url(#ah8-orange)"/>
+        <line x1="920" y1="260" x2="1020" y2="285" stroke="#fb923c" stroke-width="1.5" marker-end="url(#ah8-orange)"/>
+
+        <!-- ================================================================
+             LAYER 4: AGENTS (Aider, ClawdBot, OpenClaw, Hermes, OpenCode, Blackbox)
+             ================================================================ -->
+        <!-- Aider -->
+        <rect x="80" y="285" width="230" height="45" rx="6" fill="#0f172a"/>
+        <rect x="80" y="285" width="230" height="45" rx="6" fill="rgba(251, 113, 133, 0.1)" stroke="#fb7185" stroke-width="1"/>
+        <text x="195" y="303" fill="#fb7185" font-size="10" font-weight="700" text-anchor="middle">AIDER</text>
+        <text x="195" y="318" fill="#94a3b8" font-size="8" text-anchor="middle">Debug · Test fixing · Script patching</text>
+
+        <!-- ClawdBot -->
+        <rect x="330" y="285" width="230" height="45" rx="6" fill="#0f172a"/>
+        <rect x="330" y="285" width="230" height="45" rx="6" fill="rgba(34, 211, 238, 0.1)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="445" y="303" fill="#22d3ee" font-size="10" font-weight="700" text-anchor="middle">CLAWDBOT</text>
+        <text x="445" y="318" fill="#94a3b8" font-size="8" text-anchor="middle">Autonomous scanner · UI orchestrator</text>
+
+        <!-- OpenClaw -->
+        <rect x="580" y="285" width="230" height="45" rx="6" fill="#0f172a"/>
+        <rect x="580" y="285" width="230" height="45" rx="6" fill="rgba(52, 211, 153, 0.1)" stroke="#34d399" stroke-width="1"/>
+        <text x="695" y="303" fill="#34d399" font-size="10" font-weight="700" text-anchor="middle">OPENCLAW</text>
+        <text x="695" y="318" fill="#94a3b8" font-size="8" text-anchor="middle">WebSocket bridge · Distributed payload</text>
+
+        <!-- Hermes -->
+        <rect x="830" y="285" width="230" height="45" rx="6" fill="#0f172a"/>
+        <rect x="830" y="285" width="230" height="45" rx="6" fill="rgba(167, 139, 250, 0.1)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="945" y="303" fill="#a78bfa" font-size="10" font-weight="700" text-anchor="middle">HERMES</text>
+        <text x="945" y="318" fill="#94a3b8" font-size="8" text-anchor="middle">Local system executor</text>
+
+        <!-- ================================================================
+             FLEET CONFIG PANEL (Left side, mid-section)
+             ================================================================ -->
+        <rect x="50" y="350" width="250" height="170" rx="8" fill="#0f172a"/>
+        <rect x="50" y="350" width="250" height="170" rx="8" fill="rgba(15, 23, 42, 0.8)" stroke="#1e293b" stroke-width="1"/>
+        <text x="175" y="370" fill="#fbbf24" font-size="10" font-weight="700" text-anchor="middle">FLEET CONFIG</text>
+        <line x1="60" y1="376" x2="290" y2="376" stroke="#fbbf24" stroke-width="0.5" opacity="0.4"/>
+
+        <text x="60" y="392" fill="#94a3b8" font-size="9">Mode:</text>
+        <text x="200" y="392" fill="#34d399" font-size="9" text-anchor="end">recovery</text>
+        <text x="60" y="406" fill="#94a3b8" font-size="9">Max workers:</text>
+        <text x="200" y="406" fill="#22d3ee" font-size="9" text-anchor="end">16</text>
+        <text x="60" y="420" fill="#94a3b8" font-size="9">Fleet name:</text>
+        <text x="200" y="420" fill="#94a3b8" font-size="8" text-anchor="end">MasterRecovery3</text>
+
+        <line x1="60" y1="428" x2="290" y2="428" stroke="#1e293b" stroke-width="0.5"/>
+
+        <text x="60" y="442" fill="#fbbf24" font-size="8" font-weight="600">RECOVERY TRACKS:</text>
+        <text x="60" y="455" fill="#fb923c" font-size="8">▪ track_a_btc_scan (Seed B)</text>
+        <text x="60" y="467" fill="#22d3ee" font-size="8">▪ track_b_ltc_recovery (Seed F)</text>
+
+        <text x="60" y="482" fill="#fbbf24" font-size="8" font-weight="600">FALLBACK CHAIN:</text>
+        <text x="60" y="495" fill="#34d399" font-size="8">▪ OpenRouter API fallback</text>
+        <text x="60" y="507" fill="#22d3ee" font-size="8">▪ Gemini API fallback (mock)</text>
+
+        <!-- ================================================================
+             AI MODEL FUSION PANEL (Center, mid-section)
+             ================================================================ -->
+        <rect x="320" y="350" width="560" height="170" rx="8" fill="#0f172a"/>
+        <rect x="320" y="350" width="560" height="170" rx="8" fill="rgba(15, 23, 42, 0.8)" stroke="#1e293b" stroke-width="1"/>
+        <text x="600" y="370" fill="#a78bfa" font-size="10" font-weight="700" text-anchor="middle">AI MODEL FUSION — 6 MODELS</text>
+        <line x1="330" y1="376" x2="870" y2="376" stroke="#a78bfa" stroke-width="0.5" opacity="0.4"/>
+
+        <!-- 6 model cards in 2 rows of 3 -->
+        <!-- Row 1 -->
+        <rect x="335" y="385" width="170" height="40" rx="5" fill="rgba(251, 146, 60, 0.08)" stroke="#fb923c" stroke-width="0.8"/>
+        <text x="420" y="400" fill="#fb923c" font-size="9" font-weight="700" text-anchor="middle">CODEX / OpenAI</text>
+        <text x="420" y="413" fill="#94a3b8" font-size="7" text-anchor="middle">Code impl · Review · Shell</text>
+
+        <rect x="515" y="385" width="170" height="40" rx="5" fill="rgba(34, 211, 238, 0.08)" stroke="#22d3ee" stroke-width="0.8"/>
+        <text x="600" y="400" fill="#22d3ee" font-size="9" font-weight="700" text-anchor="middle">GEMINI / Google</text>
+        <text x="600" y="413" fill="#94a3b8" font-size="7" text-anchor="middle">File ops · Monitoring · Docs</text>
+
+        <rect x="695" y="385" width="170" height="40" rx="5" fill="rgba(167, 139, 250, 0.08)" stroke="#a78bfa" stroke-width="0.8"/>
+        <text x="780" y="400" fill="#a78bfa" font-size="9" font-weight="700" text-anchor="middle">CLAUDE / Anthropic</text>
+        <text x="780" y="413" fill="#94a3b8" font-size="7" text-anchor="middle">Orchestration · Planning</text>
+
+        <!-- Row 2 -->
+        <rect x="335" y="435" width="170" height="40" rx="5" fill="rgba(52, 211, 153, 0.08)" stroke="#34d399" stroke-width="0.8"/>
+        <text x="420" y="450" fill="#34d399" font-size="9" font-weight="700" text-anchor="middle">COPILOT / GitHub</text>
+        <text x="420" y="463" fill="#94a3b8" font-size="7" text-anchor="middle">Inline coding · Repo guidance</text>
+
+        <rect x="515" y="435" width="170" height="40" rx="5" fill="rgba(251, 113, 133, 0.08)" stroke="#fb7185" stroke-width="0.8"/>
+        <text x="600" y="450" fill="#fb7185" font-size="9" font-weight="700" text-anchor="middle">AIDER / OpenRouter</text>
+        <text x="600" y="463" fill="#94a3b8" font-size="7" text-anchor="middle">Debug/fix · Validation loops</text>
+
+        <rect x="695" y="435" width="170" height="40" rx="5" fill="rgba(251, 191, 36, 0.08)" stroke="#fbbf24" stroke-width="0.8"/>
+        <text x="780" y="450" fill="#fbbf24" font-size="9" font-weight="700" text-anchor="middle">VERTEX / GCP</text>
+        <text x="780" y="463" fill="#94a3b8" font-size="7" text-anchor="middle">AI platform · Recovery inference</text>
+
+        <text x="600" y="498" fill="#64748b" font-size="8" text-anchor="middle" opacity="0.7">Cross-agent skill, tool, and memory alignment · v2026-03-02</text>
+        <text x="600" y="510" fill="#64748b" font-size="8" text-anchor="middle" opacity="0.6">Shared memory: ai_shared_memory.md · IPC: gemini dispatcher</text>
+
+        <!-- ================================================================
+             CLAWDBOT SUBSYSTEM PANEL (Right side, mid-section)
+             ================================================================ -->
+        <rect x="900" y="350" width="250" height="170" rx="8" fill="#0f172a"/>
+        <rect x="900" y="350" width="250" height="170" rx="8" fill="rgba(15, 23, 42, 0.8)" stroke="#1e293b" stroke-width="1"/>
+        <text x="1025" y="370" fill="#22d3ee" font-size="10" font-weight="700" text-anchor="middle">CLAWDBOT ENGINE · 47 .py</text>
+        <line x1="910" y1="376" x2="1140" y2="376" stroke="#22d3ee" stroke-width="0.5" opacity="0.4"/>
+
+        <text x="910" y="392" fill="#fbbf24" font-size="8" font-weight="600">KEY MODULES:</text>
+        <text x="910" y="405" fill="#22d3ee" font-size="8">▪ adaptive_strategy_engine.py</text>
+        <text x="910" y="417" fill="#22d3ee" font-size="8">▪ address_deriver.py</text>
+        <text x="910" y="429" fill="#22d3ee" font-size="8">▪ agent_lightning.py</text>
+        <text x="910" y="441" fill="#22d3ee" font-size="8">▪ blockchain_checker.py</text>
+        <text x="910" y="453" fill="#22d3ee" font-size="8">▪ btcrecover_wrapper.py</text>
+        <text x="910" y="465" fill="#22d3ee" font-size="8">▪ autonomous_sweep_coordinator</text>
+        <text x="910" y="477" fill="#22d3ee" font-size="8">▪ jarvis_core.py</text>
+        <text x="910" y="489" fill="#22d3ee" font-size="8">▪ recovery_search_system.py</text>
+
+        <text x="910" y="505" fill="#64748b" font-size="7" opacity="0.7">+39 more (47 total Python files)</text>
+
+        <!-- ================================================================
+             29-AGENT ROSTER (Bottom strip)
+             ================================================================ -->
+        <rect x="50" y="535" width="1100" height="70" rx="8" fill="#0f172a"/>
+        <rect x="50" y="535" width="1100" height="70" rx="8" fill="rgba(15, 23, 42, 0.6)" stroke="#1e293b" stroke-width="1"/>
+        <text x="600" y="552" fill="#34d399" font-size="10" font-weight="700" text-anchor="middle">29-AGENT ROSTER — config/agents.json</text>
+        <line x1="60" y1="558" x2="1140" y2="558" stroke="#34d399" stroke-width="0.5" opacity="0.3"/>
+
+        <text x="60" y="573" fill="#94a3b8" font-size="7.5">project_manager</text>
+        <text x="180" y="573" fill="#94a3b8" font-size="7.5">worker_agent</text>
+        <text x="290" y="573" fill="#94a3b8" font-size="7.5">researcher</text>
+        <text x="385" y="573" fill="#94a3b8" font-size="7.5">seed_finder</text>
+        <text x="485" y="573" fill="#94a3b8" font-size="7.5">passphrase_mutator</text>
+        <text x="620" y="573" fill="#94a3b8" font-size="7.5">electrum_expert</text>
+        <text x="735" y="573" fill="#94a3b8" font-size="7.5">trezor_expert</text>
+        <text x="840" y="573" fill="#94a3b8" font-size="7.5">blockchain_monitor</text>
+        <text x="970" y="573" fill="#94a3b8" font-size="7.5">log_analyzer</text>
+        <text x="1075" y="573" fill="#94a3b8" font-size="7.5">gemini_analyst</text>
+
+        <text x="60" y="588" fill="#94a3b8" font-size="7.5">gdrive_analyst</text>
+        <text x="170" y="588" fill="#94a3b8" font-size="7.5">claude_reasoner</text>
+        <text x="290" y="588" fill="#94a3b8" font-size="7.5">message_broker</text>
+        <text x="400" y="588" fill="#94a3b8" font-size="7.5">communication_daemon</text>
+        <text x="540" y="588" fill="#94a3b8" font-size="7.5">bitlocker_explorer</text>
+        <text x="665" y="588" fill="#94a3b8" font-size="7.5">bitlocker_context</text>
+        <text x="780" y="588" fill="#94a3b8" font-size="7.5">openclaw</text>
+        <text x="850" y="588" fill="#94a3b8" font-size="7.5">vertex_recovery</text>
+        <text x="960" y="588" fill="#94a3b8" font-size="7.5">aider_debug</text>
+        <text x="1050" y="588" fill="#94a3b8" font-size="7.5">openrouter_llm</text>
+
+        <text x="60" y="603" fill="#94a3b8" font-size="7.5">blackbox</text>
+        <text x="140" y="603" fill="#94a3b8" font-size="7.5">hermes</text>
+        <text x="210" y="603" fill="#94a3b8" font-size="7.5">ollama_runner</text>
+        <text x="320" y="603" fill="#94a3b8" font-size="7.5">opencode_runner</text>
+        <text x="435" y="603" fill="#94a3b8" font-size="7.5">announcement_relay</text>
+        <text x="560" y="603" fill="#94a3b8" font-size="7.5">gemini_orchestrator</text>
+        <text x="690" y="603" fill="#fbbf24" font-size="7.5" font-weight="700">jarvis_overseer</text>
+        <text x="800" y="603" fill="#94a3b8" font-size="7.5">bounty_reporter</text>
+        <text x="905" y="603" fill="#94a3b8" font-size="7.5">pow_coordinator</text>
+
+        <!-- ================================================================
+             CONNECTIONS TO EXISTING TOPOLOGY
+             ================================================================ -->
+        <rect x="50" y="620" width="1100" height="65" rx="8" fill="#0f172a"/>
+        <rect x="50" y="620" width="1100" height="65" rx="8" fill="rgba(251, 113, 133, 0.06)" stroke="#fb7185" stroke-width="1" stroke-dasharray="6,3" opacity="0.6"/>
+        <text x="600" y="638" fill="#fb7185" font-size="10" font-weight="700" text-anchor="middle">CONNECTIONS TO EXISTING TOPOLOGY</text>
+        <line x1="60" y1="644" x2="1140" y2="644" stroke="#fb7185" stroke-width="0.5" opacity="0.3"/>
+
+        <text x="80" y="660" fill="#34d399" font-size="9" font-weight="600">ClawdBot</text>
+        <text x="160" y="660" fill="#64748b" font-size="9">──→</text>
+        <text x="195" y="660" fill="#22d3ee" font-size="9">OpenClaw :18789</text>
+        <text x="350" y="660" fill="#64748b" font-size="8" opacity="0.7">(WebSocket bridge)</text>
+
+        <text x="520" y="660" fill="#34d399" font-size="9" font-weight="600">recovery_agent</text>
+        <text x="630" y="660" fill="#64748b" font-size="9">──→</text>
+        <text x="665" y="660" fill="#a78bfa" font-size="9">AGY bridge</text>
+        <text x="750" y="660" fill="#64748b" font-size="8" opacity="0.7">(SDK integration)</text>
+
+        <text x="80" y="676" fill="#34d399" font-size="9" font-weight="600">recovery.py</text>
+        <text x="160" y="676" fill="#64748b" font-size="9">──→</text>
+        <text x="195" y="676" fill="#fbbf24" font-size="9">vertex_orchestrator</text>
+        <text x="340" y="676" fill="#64748b" font-size="8" opacity="0.7">(Vertex AI pipeline)</text>
+
+        <text x="520" y="676" fill="#64748b" font-size="8" opacity="0.7">Hierarchy v3.0 · gemini_orchestrated · IPC: gemini dispatcher · manager_queue / worker_queue</text>
+
+      </svg>
+    </div>
+
+    <!-- JARVIS Fleet Info Cards -->
+    <div class="cards" style="margin-top: 2rem;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot amber"></div>
+          <h3>JARVIS Fleet (29 agents)</h3>
+        </div>
+        <ul>
+          <li>• Hierarchy v3.0 · gemini_orchestrated mode</li>
+          <li>• Orchestrator: Gemini (supreme)</li>
+          <li>• Managers: Claude, Copilot, Codex</li>
+          <li>• Agents: Aider, ClawdBot, OpenClaw, Hermes</li>
+          <li>• 29 agents in config/agents.json</li>
+          <li>• IPC: gemini dispatcher · 2 queues</li>
+          <li>• JARVIS overseer: 30s watch interval</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot violet"></div>
+          <h3>AI Model Fusion (6 models)</h3>
+        </div>
+        <ul>
+          <li>• Codex / OpenAI — code impl &amp; shell</li>
+          <li>• Gemini / Google — file ops &amp; monitoring</li>
+          <li>• Claude / Anthropic — orchestration</li>
+          <li>• Copilot / GitHub — inline coding</li>
+          <li>• Aider / OpenRouter — debug/fix loops</li>
+          <li>• Vertex / GCP — recovery inference</li>
+          <li>• Shared memory: ai_shared_memory.md</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot cyan"></div>
+          <h3>ClawdBot Engine</h3>
+        </div>
+        <ul>
+          <li>• 47 Python files in clawdbot/</li>
+          <li>• adaptive_strategy_engine.py</li>
+          <li>• address_deriver.py · agent_lightning.py</li>
+          <li>• blockchain_checker.py</li>
+          <li>• btcrecover_wrapper.py</li>
+          <li>• autonomous_sweep_coordinator.py</li>
+          <li>• jarvis_core.py · recovery_search_system</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>Recovery Tracks</h3>
+        </div>
+        <ul>
+          <li>• Fleet: MasterRecovery3 · 16 max workers</li>
+          <li>• track_a_btc_scan (Seed B) — priority 1</li>
+          <li>• track_b_ltc_recovery (Seed F) — priority 2</li>
+          <li>• OpenRouter API fallback — priority 15</li>
+          <li>• Gemini API fallback (mock) — priority 16</li>
+          <li>• ClawdBot → OpenClaw :18789</li>
+          <li>• recovery.py → vertex_orchestrator</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         SECTION 9: JAYLANG085MR4 LEGACY ARCHIVE MAP
+         ================================================================ -->
+
+    <!-- Section 9: Legacy Archive Diagram -->
+    <div class="diagram-container" style="margin-top: 2rem;">
+      <svg viewBox="0 0 1200 650">
+        <defs>
+          <pattern id="grid9" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+          <marker id="ah9-slate" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+          </marker>
+          <marker id="ah9-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee" />
+          </marker>
+          <marker id="ah9-emerald" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#34d399" />
+          </marker>
+          <marker id="ah9-violet" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa" />
+          </marker>
+          <marker id="ah9-amber" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24" />
+          </marker>
+          <marker id="ah9-rose" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185" />
+          </marker>
+          <marker id="ah9-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb923c" />
+          </marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid9)" />
+
+        <!-- Section title bar -->
+        <rect x="50" y="15" width="1100" height="35" rx="6" fill="#0f172a"/>
+        <rect x="50" y="15" width="1100" height="35" rx="6" fill="rgba(167, 139, 250, 0.15)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="600" y="37" fill="#a78bfa" font-size="11" font-weight="700" text-anchor="middle">JAYLANG085MR4 LEGACY ARCHIVE MAP · ONEDRIVE BACKUP · CONSOLIDATION CANDIDATES · STATUS: ACTIVE / ARCHIVED / MERGE</text>
+
+        <!-- ================================================================
+             (1) CONSOLIDATEDDEVELOPMENT BOX (Left — large)
+             ================================================================ -->
+        <rect x="30" y="65" width="560" height="490" rx="8" fill="#0f172a"/>
+        <rect x="30" y="65" width="560" height="490" rx="8" fill="rgba(34, 211, 238, 0.06)" stroke="#22d3ee" stroke-width="1" opacity="0.7"/>
+        <rect x="30" y="65" width="560" height="4" rx="2" fill="#22d3ee"/>
+        <text x="310" y="87" fill="#22d3ee" font-size="11" font-weight="700" text-anchor="middle">ConsolidatedDevelopment/</text>
+        <text x="310" y="101" fill="#64748b" font-size="8" text-anchor="middle" opacity="0.7">C:\Users\jayla\Documents\JayLang085MR4\OneDrive\ConsolidatedDevelopment</text>
+
+        <!-- FoundRepos sub-box (top-left of ConsolidatedDevelopment) -->
+        <rect x="42" y="112" width="270" height="250" rx="6" fill="#020617"/>
+        <rect x="42" y="112" width="270" height="250" rx="6" fill="rgba(52, 211, 153, 0.05)" stroke="#34d399" stroke-width="0.8" opacity="0.6"/>
+        <rect x="42" y="112" width="270" height="3" rx="1.5" fill="#34d399"/>
+        <text x="177" y="129" fill="#34d399" font-size="9" font-weight="700" text-anchor="middle">FoundRepos/ — 16 Repos</text>
+        <text x="52" y="144" fill="#34d399" font-size="8">▸ agents-cli</text>
+        <text x="52" y="156" fill="#34d399" font-size="8">▸ aider</text>
+        <text x="52" y="168" fill="#34d399" font-size="8">▸ antigravity-sdk-python</text>
+        <text x="52" y="180" fill="#34d399" font-size="8">▸ autonomous-recovery</text>
+        <text x="52" y="192" fill="#34d399" font-size="8">▸ BizBalance</text>
+        <text x="52" y="204" fill="#34d399" font-size="8">▸ FlowState-Finance</text>
+        <text x="52" y="216" fill="#34d399" font-size="8">▸ GenAIMindMapFlowBuilder</text>
+        <text x="52" y="228" fill="#34d399" font-size="8">▸ JARVIS</text>
+        <text x="160" y="144" fill="#34d399" font-size="8">▸ local-recovery</text>
+        <text x="160" y="156" fill="#34d399" font-size="8">▸ MasterRecovery2</text>
+        <text x="160" y="168" fill="#34d399" font-size="8">▸ MasterRecovery3_SSOT</text>
+        <text x="160" y="180" fill="#34d399" font-size="8">▸ mindsdb</text>
+        <text x="160" y="192" fill="#34d399" font-size="8">▸ numera</text>
+        <text x="160" y="204" fill="#34d399" font-size="8">▸ Numera2</text>
+        <text x="160" y="216" fill="#34d399" font-size="8">▸ trezor-firmware</text>
+        <text x="160" y="228" fill="#34d399" font-size="8">▸ + rtl88xxau drivers</text>
+
+        <!-- FoundRepos status legend -->
+        <rect x="52" y="245" width="250" height="55" rx="4" fill="#0f172a" stroke="#1e293b" stroke-width="0.5"/>
+        <text x="62" y="260" fill="#fbbf24" font-size="7" font-weight="600">⚠ DUPLICATES (consolidate):</text>
+        <text x="62" y="272" fill="#fbbf24" font-size="7">  Numera2 ×5 copies (timestamped)</text>
+        <text x="62" y="284" fill="#fbbf24" font-size="7">  trezor-firmware ×2, rtl drivers ×6</text>
+        <text x="62" y="296" fill="#34d399" font-size="7">  Canonical: 14 unique + 2 firmware</text>
+
+        <!-- FoundRepos status badges -->
+        <circle cx="56" cy="318" r="4" fill="#fbbf24"/>
+        <text x="64" y="321" fill="#fbbf24" font-size="7">ARCHIVED (backup)</text>
+        <circle cx="180" cy="318" r="4" fill="#34d399"/>
+        <text x="188" y="321" fill="#34d399" font-size="7">5 cloned to WSL</text>
+
+        <!-- Gemini project sub-box (top-right of ConsolidatedDevelopment) -->
+        <rect x="322" y="112" width="258" height="120" rx="6" fill="#020617"/>
+        <rect x="322" y="112" width="258" height="120" rx="6" fill="rgba(251, 191, 36, 0.05)" stroke="#fbbf24" stroke-width="0.8" opacity="0.6"/>
+        <rect x="322" y="112" width="258" height="3" rx="1.5" fill="#fbbf24"/>
+        <text x="451" y="129" fill="#fbbf24" font-size="9" font-weight="700" text-anchor="middle">Gemini/ (GCP Project)</text>
+        <text x="332" y="144" fill="#fbbf24" font-size="8">▸ cloudbuild.yaml</text>
+        <text x="332" y="156" fill="#fbbf24" font-size="8">▸ Dockerfile + docker-compose.yml</text>
+        <text x="332" y="168" fill="#fbbf24" font-size="8">▸ deploy-gcloud.sh</text>
+        <text x="332" y="180" fill="#fbbf24" font-size="8">▸ DEPLOYMENT_COMMANDS.md</text>
+        <text x="332" y="192" fill="#fbbf24" font-size="8">▸ ALL_TARGETS.txt</text>
+        <text x="332" y="204" fill="#94a3b8" font-size="7" opacity="0.7">+ dist/ examples/ experiments/</text>
+        <rect x="332" y="212" width="70" height="14" rx="3" fill="rgba(251, 191, 36, 0.15)" stroke="#fbbf24" stroke-width="0.5"/>
+        <text x="367" y="222" fill="#fbbf24" font-size="7" text-anchor="middle">CANDIDATE</text>
+
+        <!-- Cline config sub-box (right side, below Gemini) -->
+        <rect x="322" y="240" width="258" height="122" rx="6" fill="#020617"/>
+        <rect x="322" y="240" width="258" height="122" rx="6" fill="rgba(167, 139, 250, 0.05)" stroke="#a78bfa" stroke-width="0.8" opacity="0.6"/>
+        <rect x="322" y="240" width="258" height="3" rx="1.5" fill="#a78bfa"/>
+        <text x="451" y="257" fill="#a78bfa" font-size="9" font-weight="700" text-anchor="middle">Cline/ (Config)</text>
+        <text x="332" y="272" fill="#a78bfa" font-size="8">▸ Hooks/ — automation hooks</text>
+        <text x="332" y="284" fill="#a78bfa" font-size="8">▸ Rules/ — coding rules</text>
+        <text x="332" y="296" fill="#a78bfa" font-size="8">▸ Workflows/ — task workflows</text>
+        <text x="332" y="310" fill="#94a3b8" font-size="7" opacity="0.7">Cline IDE integration config</text>
+        <text x="332" y="322" fill="#94a3b8" font-size="7" opacity="0.7">Templates for agent pipelines</text>
+        <rect x="332" y="340" width="70" height="14" rx="3" fill="rgba(167, 139, 250, 0.15)" stroke="#a78bfa" stroke-width="0.5"/>
+        <text x="367" y="350" fill="#a78bfa" font-size="7" text-anchor="middle">CANDIDATE</text>
+
+        <!-- Numera2 sub-box (bottom-left of ConsolidatedDevelopment) -->
+        <rect x="42" y="372" width="270" height="100" rx="6" fill="#020617"/>
+        <rect x="42" y="372" width="270" height="100" rx="6" fill="rgba(251, 146, 60, 0.05)" stroke="#fb923c" stroke-width="0.8" opacity="0.6"/>
+        <rect x="42" y="372" width="270" height="3" rx="1.5" fill="#fb923c"/>
+        <text x="177" y="389" fill="#fb923c" font-size="9" font-weight="700" text-anchor="middle">Numera2/ (Android Finance App)</text>
+        <text x="52" y="404" fill="#fb923c" font-size="8">▸ Android finance application</text>
+        <text x="52" y="416" fill="#fb923c" font-size="8">▸ Also in FoundRepos (5 copies)</text>
+        <text x="52" y="428" fill="#94a3b8" font-size="7" opacity="0.7">Business app: Numera2 + BizBalance</text>
+        <text x="52" y="440" fill="#94a3b8" font-size="7" opacity="0.7">FlowState-Finance ecosystem</text>
+        <rect x="52" y="450" width="70" height="14" rx="3" fill="rgba(251, 146, 60, 0.15)" stroke="#fb923c" stroke-width="0.5"/>
+        <text x="87" y="460" fill="#fb923c" font-size="7" text-anchor="middle">CANDIDATE</text>
+
+        <!-- MasterRecovery3 copies sub-box (bottom-center) -->
+        <rect x="322" y="372" width="258" height="100" rx="6" fill="#020617"/>
+        <rect x="322" y="372" width="258" height="100" rx="6" fill="rgba(251, 113, 133, 0.05)" stroke="#fb7185" stroke-width="0.8" opacity="0.6"/>
+        <rect x="322" y="372" width="258" height="3" rx="1.5" fill="#fb7185"/>
+        <text x="451" y="389" fill="#fb7185" font-size="9" font-weight="700" text-anchor="middle">MasterRecovery3 Copies</text>
+        <text x="332" y="404" fill="#fb7185" font-size="8">▸ MasterRecovery3/ (root copy)</text>
+        <text x="332" y="416" fill="#fb7185" font-size="8">▸ MasterRecovery3_20260730_233021/</text>
+        <text x="332" y="428" fill="#fbbf24" font-size="7">⚠ Timestamped backup snapshot</text>
+        <text x="332" y="440" fill="#94a3b8" font-size="7" opacity="0.7">Active fleet lives in WSL ~/MasterRecovery3</text>
+        <rect x="332" y="450" width="70" height="14" rx="3" fill="rgba(251, 113, 133, 0.15)" stroke="#fb7185" stroke-width="0.5"/>
+        <text x="367" y="460" fill="#fb7185" font-size="7" text-anchor="middle">ARCHIVED</text>
+
+        <!-- trezor-firmware sub-box (bottom strip) -->
+        <rect x="42" y="482" width="538" height="62" rx="6" fill="#020617"/>
+        <rect x="42" y="482" width="538" height="62" rx="6" fill="rgba(100, 116, 139, 0.05)" stroke="#64748b" stroke-width="0.8" opacity="0.5"/>
+        <rect x="42" y="482" width="538" height="3" rx="1.5" fill="#64748b"/>
+        <text x="311" y="499" fill="#64748b" font-size="9" font-weight="700" text-anchor="middle">trezor-firmware/ — Hardware Wallet Firmware Source</text>
+        <text x="52" y="514" fill="#64748b" font-size="8">▸ trezor-firmware/ + trezor-firmware_20260731_001235/</text>
+        <text x="52" y="526" fill="#94a3b8" font-size="7" opacity="0.7">BTCRecover dependency · crypto recovery toolchain reference</text>
+        <rect x="52" y="532" width="70" height="14" rx="3" fill="rgba(100, 116, 139, 0.15)" stroke="#64748b" stroke-width="0.5"/>
+        <text x="87" y="542" fill="#64748b" font-size="7" text-anchor="middle">ARCHIVED</text>
+        <text x="490" y="538" fill="#34d399" font-size="7">BTCRecover active in WSL</text>
+
+        <!-- ================================================================
+             (2) DESKTOP BOX (Top-Right)
+             ================================================================ -->
+        <rect x="600" y="65" width="570" height="250" rx="8" fill="#0f172a"/>
+        <rect x="600" y="65" width="570" height="250" rx="8" fill="rgba(52, 211, 153, 0.06)" stroke="#34d399" stroke-width="1" opacity="0.7"/>
+        <rect x="600" y="65" width="570" height="4" rx="2" fill="#34d399"/>
+        <text x="885" y="87" fill="#34d399" font-size="11" font-weight="700" text-anchor="middle">Desktop/</text>
+        <text x="885" y="101" fill="#64748b" font-size="8" text-anchor="middle" opacity="0.7">...\JayLang085MR4\OneDrive\Desktop</text>
+
+        <!-- Recovery docs -->
+        <text x="612" y="120" fill="#34d399" font-size="8" font-weight="600">▸ Recovery/ — DR docs + DRIVES/ + RECOVERY/</text>
+        <text x="612" y="132" fill="#94a3b8" font-size="7" opacity="0.7">  Compile-all-data docx, MasterRecovery3 subdir</text>
+
+        <!-- MasterRecovery_Consolidated -->
+        <text x="612" y="148" fill="#34d399" font-size="8" font-weight="600">▸ MasterRecovery_Consolidated/</text>
+        <text x="612" y="160" fill="#94a3b8" font-size="7" opacity="0.7">  Copy of https/ — web archive snapshot</text>
+
+        <!-- Personal Vault-Homelab -->
+        <text x="612" y="176" fill="#34d399" font-size="8" font-weight="600">▸ Personal Vault-Homelab/</text>
+        <text x="612" y="188" fill="#94a3b8" font-size="7" opacity="0.7">  Homelab infrastructure docs &amp; secrets vault</text>
+
+        <!-- IMPORTS_NEED_MOVED -->
+        <rect x="610" y="198" width="270" height="75" rx="4" fill="#020617" stroke="#fbbf24" stroke-width="0.5" opacity="0.8"/>
+        <text x="620" y="213" fill="#fbbf24" font-size="8" font-weight="600">▸ IMPORTS_NEED_MOVED/</text>
+        <text x="620" y="225" fill="#fbbf24" font-size="7">  admin-google-projs.png</text>
+        <text x="620" y="237" fill="#fbbf24" font-size="7">  Screenshot_7-8-2026 (Docker app)</text>
+        <text x="620" y="249" fill="#fbbf24" font-size="7">  Screenshot 2026-08-16 083451</text>
+        <text x="620" y="261" fill="#94a3b8" font-size="6" opacity="0.7">  ⚠ Unsorted screenshots — needs triage</text>
+        <rect x="830" y="255" width="42" height="13" rx="3" fill="rgba(251, 191, 36, 0.15)" stroke="#fbbf24" stroke-width="0.5"/>
+        <text x="851" y="265" fill="#fbbf24" font-size="6" text-anchor="middle">TODO</text>
+
+        <!-- Gemini Code Reviewer for BTCRecover -->
+        <rect x="890" y="198" width="270" height="55" rx="4" fill="#020617" stroke="#a78bfa" stroke-width="0.5" opacity="0.8"/>
+        <text x="900" y="213" fill="#a78bfa" font-size="8" font-weight="600">▸ Gemini Code Reviewer</text>
+        <text x="900" y="225" fill="#a78bfa" font-size="7">  for BTCRecover.zip</text>
+        <text x="900" y="237" fill="#94a3b8" font-size="6" opacity="0.7">  In Imports/ (admin@208fenceandgate)</text>
+        <text x="900" y="249" fill="#94a3b8" font-size="6" opacity="0.7">  AI code review tool for crypto recovery</text>
+        <rect x="1100" y="237" width="52" height="13" rx="3" fill="rgba(167, 139, 250, 0.15)" stroke="#a78bfa" stroke-width="0.5"/>
+        <text x="1126" y="247" fill="#a78bfa" font-size="6" text-anchor="middle">CANDIDATE</text>
+
+        <!-- ParlayVisionAI.zip -->
+        <rect x="890" y="260" width="270" height="45" rx="4" fill="#020617" stroke="#fb923c" stroke-width="0.5" opacity="0.8"/>
+        <text x="900" y="275" fill="#fb923c" font-size="8" font-weight="600">▸ ParlayVisionAI.zip</text>
+        <text x="900" y="287" fill="#94a3b8" font-size="6" opacity="0.7">  In Imports/ — AI vision/sports betting app</text>
+        <text x="900" y="297" fill="#94a3b8" font-size="6" opacity="0.7">  Unzipped review needed</text>
+        <rect x="1100" y="285" width="52" height="13" rx="3" fill="rgba(251, 146, 60, 0.15)" stroke="#fb923c" stroke-width="0.5"/>
+        <text x="1126" y="295" fill="#fb923c" font-size="6" text-anchor="middle">CANDIDATE</text>
+
+        <!-- Desktop status badges -->
+        <circle cx="612" cy="310" r="4" fill="#34d399"/>
+        <text x="620" y="313" fill="#34d399" font-size="7">ACTIVE (docs referenced)</text>
+        <circle cx="780" cy="310" r="4" fill="#fbbf24"/>
+        <text x="788" y="313" fill="#fbbf24" font-size="7">TODO: IMPORTS triage</text>
+
+        <!-- ================================================================
+             (3) ONEDRIVE_CONORG09 BOX (Bottom-Right)
+             ================================================================ -->
+        <rect x="600" y="325" width="570" height="230" rx="8" fill="#0f172a"/>
+        <rect x="600" y="325" width="570" height="230" rx="8" fill="rgba(34, 211, 238, 0.06)" stroke="#22d3ee" stroke-width="1" opacity="0.7"/>
+        <rect x="600" y="325" width="570" height="4" rx="2" fill="#22d3ee"/>
+        <text x="885" y="347" fill="#22d3ee" font-size="11" font-weight="700" text-anchor="middle">OneDrive_conorg09/ (2nd Account Desktop)</text>
+        <text x="885" y="361" fill="#64748b" font-size="8" text-anchor="middle" opacity="0.7">...\JayLang085MR4\OneDrive\OneDrive_conorg09\OneDrive\Desktop(1)</text>
+
+        <!-- deep-research-report.md -->
+        <rect x="612" y="372" width="260" height="55" rx="4" fill="#020617" stroke="#34d399" stroke-width="0.5" opacity="0.8"/>
+        <text x="622" y="387" fill="#34d399" font-size="8" font-weight="600">▸ deep-research-report.md</text>
+        <text x="622" y="399" fill="#94a3b8" font-size="7" opacity="0.7">  Comprehensive research report</text>
+        <text x="622" y="411" fill="#94a3b8" font-size="7" opacity="0.7">  Also in Pictures(1)/ — duplicated</text>
+        <rect x="830" y="407" width="42" height="13" rx="3" fill="rgba(52, 211, 153, 0.15)" stroke="#34d399" stroke-width="0.5"/>
+        <text x="851" y="417" fill="#34d399" font-size="6" text-anchor="middle">ACTIVE</text>
+
+        <!-- MasterRecovery3.code-workspace -->
+        <rect x="882" y="372" width="280" height="55" rx="4" fill="#020617" stroke="#a78bfa" stroke-width="0.5" opacity="0.8"/>
+        <text x="892" y="387" fill="#a78bfa" font-size="8" font-weight="600">▸ MasterRecovery3.code-workspace</text>
+        <text x="892" y="399" fill="#94a3b8" font-size="7" opacity="0.7">  VS Code multi-root workspace</text>
+        <text x="892" y="411" fill="#94a3b8" font-size="7" opacity="0.7">  Links MR3 repos in editor</text>
+        <rect x="1100" y="407" width="52" height="13" rx="3" fill="rgba(167, 139, 250, 0.15)" stroke="#a78bfa" stroke-width="0.5"/>
+        <text x="1126" y="417" fill="#a78bfa" font-size="6" text-anchor="middle">CANDIDATE</text>
+
+        <!-- Chrome Enterprise -->
+        <rect x="612" y="435" width="260" height="55" rx="4" fill="#020617" stroke="#fb923c" stroke-width="0.5" opacity="0.8"/>
+        <text x="622" y="450" fill="#fb923c" font-size="8" font-weight="600">▸ Chrome Enterprise Bundle</text>
+        <text x="622" y="462" fill="#fb923c" font-size="7">  getting-started-chrome-enterprise.pdf</text>
+        <text x="622" y="474" fill="#fb923c" font-size="7">  GoogleChromeEnterpriseBundle64.zip</text>
+        <text x="622" y="486" fill="#94a3b8" font-size="6" opacity="0.7">  Browser management for recovery fleet</text>
+        <rect x="830" y="470" width="42" height="13" rx="3" fill="rgba(251, 146, 60, 0.15)" stroke="#fb923c" stroke-width="0.5"/>
+        <text x="851" y="480" fill="#fb923c" font-size="6" text-anchor="middle">ARCHIVED</text>
+
+        <!-- Additional OneDrive_conorg09 contents -->
+        <rect x="882" y="435" width="280" height="55" rx="4" fill="#020617" stroke="#64748b" stroke-width="0.5" opacity="0.5"/>
+        <text x="892" y="450" fill="#64748b" font-size="8" font-weight="600">▸ Documents/ — crypto keys</text>
+        <text x="892" y="462" fill="#64748b" font-size="7">  electrum-private-keys.csv</text>
+        <text x="892" y="474" fill="#64748b" font-size="7">  RecoveryKey.txt</text>
+        <text x="892" y="486" fill="#fb7185" font-size="6">  ⚠ SENSITIVE — secure storage needed</text>
+
+        <!-- OneDrive_conorg09 status -->
+        <circle cx="612" cy="510" r="4" fill="#34d399"/>
+        <text x="620" y="513" fill="#34d399" font-size="7">1 ACTIVE</text>
+        <circle cx="700" cy="510" r="4" fill="#fbbf24"/>
+        <text x="708" y="513" fill="#fbbf24" font-size="7">1 CANDIDATE</text>
+        <circle cx="820" cy="510" r="4" fill="#fb923c"/>
+        <text x="828" y="513" fill="#fb923c" font-size="7">1 ARCHIVED</text>
+        <circle cx="930" cy="510" r="4" fill="#fb7185"/>
+        <text x="938" y="513" fill="#fb7185" font-size="7">1 SENSITIVE</text>
+
+        <!-- ================================================================
+             STATUS LEGEND BAR (Bottom)
+             ================================================================ -->
+        <rect x="30" y="565" width="1140" height="65" rx="6" fill="#0f172a" stroke="#1e293b" stroke-width="0.5"/>
+        <text x="50" y="583" fill="#a78bfa" font-size="9" font-weight="700">STATUS INDICATORS</text>
+
+        <circle cx="52" cy="600" r="5" fill="#34d399"/>
+        <text x="62" y="603" fill="#34d399" font-size="8" font-weight="600">ACTIVE (in WSL)</text>
+        <text x="62" y="615" fill="#94a3b8" font-size="7">5 FoundRepos cloned · MR3 fleet · recovery.py · BTCRecover · deep-research</text>
+        <text x="62" y="625" fill="#64748b" font-size="6" opacity="0.7">Live in ~/ · actively used in Hermes/OpenClaw pipeline</text>
+
+        <circle cx="390" cy="600" r="5" fill="#fbbf24"/>
+        <text x="400" y="603" fill="#fbbf24" font-size="8" font-weight="600">ARCHIVED (backup only)</text>
+        <text x="400" y="615" fill="#94a3b8" font-size="7">MR3 copies · trezor-firmware · Chrome Enterprise · Desktop links</text>
+        <text x="400" y="625" fill="#64748b" font-size="6" opacity="0.7">Preserved for reference · not in active pipeline</text>
+
+        <circle cx="720" cy="600" r="5" fill="#a78bfa"/>
+        <text x="730" y="603" fill="#a78bfa" font-size="8" font-weight="600">CANDIDATES (consolidate)</text>
+        <text x="730" y="615" fill="#94a3b8" font-size="7">Gemini project · Cline config · Numera2 · ParlayVisionAI · .code-workspace</text>
+        <text x="730" y="625" fill="#64748b" font-size="6" opacity="0.7">Evaluate for WSL migration or deletion</text>
+
+        <circle cx="1020" cy="600" r="5" fill="#fb7185"/>
+        <text x="1030" y="603" fill="#fb7185" font-size="8" font-weight="600">SENSITIVE</text>
+        <text x="1030" y="615" fill="#94a3b8" font-size="7">electrum-private-keys.csv</text>
+        <text x="1030" y="625" fill="#64748b" font-size="6" opacity="0.7">RecoveryKey.txt → secure vault</text>
+
+        <!-- Connector lines: Desktop ↔ ConsolidatedDevelopment (cross-archive link) -->
+        <line x1="600" y1="170" x2="590" y2="170" stroke="#64748b" stroke-width="1" stroke-dasharray="3,2" opacity="0.5" marker-end="url(#ah9-slate)"/>
+        <text x="580" y="162" fill="#64748b" font-size="6" opacity="0.7">refs</text>
+
+        <!-- OneDrive_conorg09 ↔ ConsolidatedDevelopment (MR3 workspace link) -->
+        <line x1="600" y1="400" x2="590" y2="400" stroke="#a78bfa" stroke-width="1" stroke-dasharray="3,2" opacity="0.5" marker-end="url(#ah9-violet)"/>
+        <text x="560" y="393" fill="#a78bfa" font-size="6" opacity="0.7">.code-workspace</text>
+
+      </svg>
+    </div>
+
+    <!-- Legacy Archive Info Cards -->
+    <div class="cards" style="margin-top: 2rem;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>FoundRepos (16 Repos)</h3>
+        </div>
+        <ul>
+          <li>• agents-cli, aider, JARVIS, mindsdb</li>
+          <li>• MasterRecovery2, MasterRecovery3_SSOT</li>
+          <li>• local-recovery, autonomous-recovery</li>
+          <li>• antigravity-sdk, GenAIMindMapFlowBuilder</li>
+          <li>• numera, Numera2 (×5 timestamped dupes)</li>
+          <li>• BizBalance, FlowState-Finance</li>
+          <li>• trezor-firmware (×2), rtl88xxau drivers (×6)</li>
+          <li class="fixed">→ 5 cloned to WSL (active)</li>
+          <li class="pending">→ 11 archived (backup only)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot amber"></div>
+          <h3>Gemini + Cline Configs</h3>
+        </div>
+        <ul>
+          <li>• Gemini/: cloudbuild.yaml + Dockerfile</li>
+          <li>• deploy-gcloud.sh, DEPLOYMENT_COMMANDS.md</li>
+          <li>• ALL_TARGETS.txt, dist/ examples/ experiments/</li>
+          <li>• Cline/: Hooks/ Rules/ Workflows/</li>
+          <li>• IDE automation &amp; agent pipeline templates</li>
+          <li class="pending">→ Both: consolidation candidates</li>
+          <li>• Gemini Code Reviewer for BTCRecover.zip</li>
+          <li>• In Imports/ (admin@208fenceandgate)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot orange"></div>
+          <h3>Numera2 + Business Apps</h3>
+        </div>
+        <ul>
+          <li>• Numera2 — Android finance application</li>
+          <li>• 5 timestamped copies in FoundRepos</li>
+          <li>• BizBalance — business balance tracker</li>
+          <li>• FlowState-Finance — finance flow tool</li>
+          <li>• ParlayVisionAI.zip (Imports/)</li>
+          <li>• AI vision/sports betting app (unzipped review)</li>
+          <li class="pending">→ All: consolidation candidates</li>
+          <li>→ Dedupe Numera2 copies first</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot violet"></div>
+          <h3>Archive Status</h3>
+        </div>
+        <ul>
+          <li class="fixed">• ACTIVE: 5 repos + MR3 fleet + BTCRecover</li>
+          <li class="pending">• ARCHIVED: MR3 copies, trezor-fw, Chrome</li>
+          <li>• CANDIDATES: Gemini, Cline, Numera2, ParlayVision</li>
+          <li>• SENSITIVE: electrum-keys.csv, RecoveryKey.txt</li>
+          <li>• TODO: IMPORTS_NEED_MOVED screenshot triage</li>
+          <li>• Desktop(1): deep-research-report.md (duped)</li>
+          <li>• MasterRecovery3.code-workspace (VS Code)</li>
+          <li>• Total: 3 archive containers, ~30 items</li>
+        </ul>
+      </div>
+    </div>
+
     <!-- Footer -->
     <p class="footer">
-      Conor's AI Agent Topology — Integration Audit 2026-08-16 • 4 fixes + 9 DR tasks + 6 subagents + 3-layer fallback + fwd-think + 10-agent hub audit • WSL2 Hermes on AlmaLinux-10
+      Conor's AI Agent Topology — 2026-08-16 · 9 SVG sections · 12 subagents · 14 MCP servers (12 AGY + 2 Hermes) · 10 agents · 29 JARVIS agents · 3-layer fallback · P0 resolved · WSL2 Hermes on AlmaLinux-10 · JayLang085MR4 legacy archive mapped
     </p>
   </div>
 </body>
