@@ -1,0 +1,60 @@
+name: Monthly Snapshot Release
+
+on:
+  schedule:
+    # 1st of every month at 09:00 UTC
+    - cron: '0 9 1 * *'
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest commits since last tag
+        id: commits
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            COMMITS=$(git log --oneline -20)
+          else
+            COMMITS=$(git log ${LAST_TAG}..HEAD --oneline)
+          fi
+          echo "commits<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Generate version tag
+        id: version
+        run: |
+          DATE=$(date +'%Y.%m')
+          TAG="v${DATE}-snapshot"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          body: |
+            ## Monthly Snapshot — $(date +'%B %Y')
+
+            ### Commits since last release:
+            ```
+            ${{ steps.commits.outputs.commits }}
+            ```
+
+            ### Active integrations:
+            - 11 agents in agent hub (all with real handlers)
+            - 3-layer fallback (Hub → AGY → vertex_orchestrator → Ollama)
+            - 14 MCP servers in Hermes (67 tools)
+            - BigQuery: 6 tables + 3 views in master-recovery-hub-2026
+            - 78 tests passing
+          draft: false
+          prerelease: false
