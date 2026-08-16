@@ -66,6 +66,9 @@ All three talk to Google Vertex AI (gemini-2.5-pro / gemini-2.5-flash in us-cent
 | /recovery/passphrases | POST | Yes | AI-generated passphrase variations |
 | /recovery/analyze-log | POST | Yes | Parse scanner logs for patterns, hits, errors |
 | /cline/execute | POST | Yes | Execute a task via Cline CLI (local autonomous coding with Ollama) |
+| /webhooks | GET | Yes | List registered webhook callbacks |
+| /webhooks/register | POST | Yes | Register a callback URL for event notifications |
+| /webhooks/unregister | POST | Yes | Remove a registered callback URL |
 
 ### MCP Server
 

@@ -14,12 +14,17 @@ Endpoints:
   POST /execute         — execute a single task
   POST /batch           — execute multiple tasks
   GET  /providers       — list available providers/models
+  GET  /webhooks        — list registered webhook callbacks
+  POST /webhooks/register   — register a callback URL for event notifications
+  POST /webhooks/unregister — remove a registered callback URL
   GET  /recovery/*      — recovery integration endpoints
 """
 from __future__ import annotations
 
 import json
 import os
+import threading
+import urllib.request
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -28,6 +33,40 @@ from vertex_orchestrator.orchestrator import Orchestrator, TaskType
 from vertex_orchestrator.event_log import (
     log_request, log_recovery, log_overseer, log_security,
 )
+
+
+# In-process webhook registry (thread-safe). Persisted to disk in future.
+_webhooks: dict[str, dict] = {}
+_webhooks_lock = threading.Lock()
+
+
+def _fire_webhooks(event_type: str, payload: dict) -> None:
+    """Fire all registered webhook callbacks for the given event type.
+
+    Calls each matching webhook synchronously (called after response is sent).
+    """
+    with _webhooks_lock:
+        matching = [
+            (url, cfg) for url, cfg in _webhooks.items()
+            if "*" in cfg.get("events", ["*"]) or event_type in cfg.get("events", ["*"])
+        ]
+    for url, cfg in matching:
+        _post_webhook(url, cfg, event_type, payload)
+
+
+def _post_webhook(url: str, cfg: dict, event_type: str, payload: dict) -> None:
+    """POST event notification to a single webhook URL."""
+    body = json.dumps({"event": event_type, "payload": payload}).encode("utf-8")
+    headers = {"Content-Type": "application/json"}
+    secret = cfg.get("secret")
+    if secret:
+        headers["X-Webhook-Secret"] = secret
+    try:
+        req = urllib.request.Request(url, data=body, headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            resp.read()
+    except Exception as e:
+        log_security("webhook_failure", f"url={url} event={event_type} error={e}")
 
 
 class OrchestratorHandler(BaseHTTPRequestHandler):
@@ -141,6 +180,16 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
                 self._send_json(503, {"success": False, "error": "overseer not running — POST /overseer/start first"})
                 return
             self._send_json(200, overseer.get_mcp_info())
+        elif path == "/webhooks":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            with _webhooks_lock:
+                hooks = [
+                    {"url": url, "events": cfg.get("events", ["*"])}
+                    for url, cfg in _webhooks.items()
+                ]
+            self._send_json(200, {"success": True, "webhooks": hooks})
         elif path == "/recovery/targets":
             if not self._check_auth():
                 self._send_json(401, {"success": False, "error": "Unauthorized"})
@@ -155,8 +204,39 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             self._send_json(404, {"error": "not found"})
 
     def do_POST(self) -> None:
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
         body = self._read_body()
+
+        # Webhook routes don't need VertexAI config
+        if path == "/webhooks/register":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            url = body.get("url", "")
+            if not url or not url.startswith("http"):
+                self._send_json(400, {"success": False, "error": "valid url is required"})
+                return
+            events = body.get("events", ["*"])
+            secret = body.get("secret", "")
+            with _webhooks_lock:
+                _webhooks[url] = {"events": events, "secret": secret}
+            self._send_json(200, {"success": True, "url": url, "events": events})
+            return
+
+        if path == "/webhooks/unregister":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            url = body.get("url", "")
+            with _webhooks_lock:
+                existed = url in _webhooks
+                _webhooks.pop(url, None)
+            if existed:
+                self._send_json(200, {"success": True, "url": url})
+            else:
+                self._send_json(404, {"success": False, "url": url, "error": "webhook not found"})
+            return
 
         # Build config from environment
         project_id = os.environ.get("GOOGLE_CLOUD_PROJECT", body.get("project_id", ""))
@@ -224,13 +304,14 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
                 kwargs["file_path"] = file_path
 
             result = orch.execute(task_type=task_type, task=task, **kwargs)
-
-            self._send_json(200, {
+            response = {
                 "success": result.success,
                 "output": result.output,
                 "error": result.error,
                 "runner_used": result.runner_used,
-            })
+            }
+            self._send_json(200, response)
+            _fire_webhooks("task.complete", response)
 
         elif path == "/batch":
             # Auth check
@@ -387,7 +468,7 @@ def run_server(host: str = "0.0.0.0", port: int = 8000) -> None:
     print(f"  Auth: {'ENABLED (ORCHESTRATOR_API_KEY set)' if os.environ.get('ORCHESTRATOR_API_KEY') else 'OPEN (no key set — local dev only)'}")
     print(f"  Fallback: {'ENABLED' if fallback_enabled else 'DISABLED'} (Ollama at 127.0.0.1:11434)")
     print(f"  File access: restricted to {os.environ.get('ORCHESTRATOR_ALLOWED_BASE', '<ConsolidatedDevelopment>')}")
-    print(f"  Endpoints: /health, /fallback/status, /execute, /batch, /providers, /recovery/*, /overseer/*, /cline/execute")
+    print(f"  Endpoints: /health, /fallback/status, /execute, /batch, /providers, /recovery/*, /overseer/*, /cline/execute, /webhooks/*")
     print(f"  Press Ctrl+C to stop")
     try:
         server.serve_forever()
