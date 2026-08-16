@@ -1,0 +1,88 @@
+# MASTER TARGET LIST - ALL CRYPTO ASSETS TO RECOVER
+# Generated: 2026-01-27
+# Total Estimated Value: ~$200,000+
+#
+# This is a SANITIZED template — seeds, WIF keys, and extended private keys
+# have been REDACTED.  The real file lives at recovery_data/ALL_TARGETS.txt
+# (gitignored) and is loaded at runtime by RecoveryIntegration.load_targets().
+
+## BITCOIN (BTC) - HIGH PRIORITY
+# Main targets:
+3NbEDt3sM6GNeaTSDMjA5FuqzLqa5YfMxq    # 1.29 BTC (~$120,000)
+3FZbgi29cpjq2GjdwV8eyHuJJnkLtktZc5    # 0.377 BTC (~$35,000)
+# Other BTC addresses:
+3P6TBMdZ1uTDtFqTQgpwSrsmJkv4T8ni2AB  # Encoded Seed - Unknown balance
+1MN9fx2KCQKM97CM8VQhUxfHPknDx2N5ek  # Unknown balance
+3KWZ8skFU8NoPUSsKehdj4twiBXCXWHwjD  # SEED B no-passphrase derived
+1UFxy4G8PTJtqfVhMZfM6Zo5dFmk4fEjj   # SEED B no-passphrase derived
+
+## LEGACY BTC (from FOUND_KEYS_LEGACY.csv - already have WIFs)
+1Ba7WinmWNY2nnBrdy75xH5pucvu7Tw7zH
+19XzxSm2ajcT2gdfRG1HxRAsSmhkL1U3RX
+1PDJZf21bRvEn6jysFJxE5hYhXcbRYPYDw
+18NYsUg39LRiXd2hCJ7HN6kbNsicvT3WbP
+1Jst1syyxUDVcBDgVvxqrBAHBfWf4UYAFj
+1FfSaDfCrDrv5jAVRy8UwNUvrVhqA34sJQ
+13DFnf8GYsc2APEzcXHwuEHBZGrGks9FsM
+1FutoNLQqD8A54aSXqDp3CQun1CgyhwtSi
+1ADd2EU1N2VjEhr5KEM3vTKBzJiD3xtz6R
+1BTrEaHaAsNYqmEz3HhpXdUCjwQom8TJ4J
+1PCWrzxnaUuGhVS68qzGZdLZ38G8CNCy7q
+1JkkC3ySHmSJcTa4HbuCUXhFwYfuXvFvuv
+1CPLRahQM7QSGat93SzQ9xjhmqAp3HPMx1
+1L4nHSDmXR8yoUe3fZcampWeBZPm5RKNCc
+17d1yvjpvGMHw7DCXsDTNXGuikG4MsLq4s
+1J4EaKCHdE2pAuZtyyJZ4pE8iHtixTorar
+1Q2dqBH6AvXC4HsNwsWJrNfJQqQnafWqRH
+18UoeBfuUzTY6KfWxJPEVv91bkHGBV646s
+128ESVvEnhrnWAGL2duM8h92XUPQUBofgM
+1LvpYMWXWQ4uDFeNTyDh1LkeiMGqbBet4a
+19Ud1nUVm5FkKWJboVUu4sb5QDwRpj7zcm
+1MUr51E6TTeDPXeQ5U9jxEbDmBfVYLUMQg
+1BVrQuywbKwgsq61qshu7XAaEt8q8qxCDW
+1HapCt4c5Fyv4C2uQXJXNtpLU8Ky3nCReZ
+1ARsGheXJKUiKV8Jue5zmEB3Z2bbzeHVaq
+12RdzuNkqRJinHYZYinhWAPBqwZe5C85e8
+
+## LITECOIN (LTC) - HIGH PRIORITY (~$25,000 total)
+LRFvoRwYAb2aMtTMGLsjC4vGFmmEa1TrE   # 100.798 LTC
+LNRGBqSsSY7CWmJPyNT4DdnBt2Hu9hDBxR  # 47.904 LTC
+Lg7g7BytLKiFt4fUza9r1nScSTxL5Y9rgn  # 80.838 LTC
+LLQPmex6hoPbjhuEqJ8fpBcZzMsNUBMLHU  # 18.96 LTC
+LT46H3kxtq7dAujf8AfMW9YzLP21sPRNng  # 0.0889 LTC
+
+## DOGECOIN (DOGE)
+DRJP1xqaVQu4JnGCXZ1WtJiEXnpfixkLAN  # 99,850 DOGE
+D9bDyAjFHK5KYStvEaYcL32h5YxLULHmJp  # 11,282 DOGE
+
+## PEERCOIN (PPC)
+P8y7rmQ67832ebQBow7MrFMcSbduz6rZ5w  # 299.4 PPC
+PQgCJDJpayrez4sukTivDYbir4gaWFaZUT  # 12.88 PPC
+
+## OTHER ADDRESSES FOUND
+Xeu43F34tNwugWjd8KPbZJKK5PNafkc1PA  # Dash? Unknown balance
+15qkRKaoYRXMq1giAFLXCZ9Ch7NYFgSiZb  # From faucet file
+
+## SOLANA (SOL)
+84pmnUtf9qZz3KtCbC6bs6fqYAC1SSztJ3gSCtSJw296
+454rP5yxDuTvrpCxXmawLbJ5788Tu8YYbtcoPsEKUop5
+
+============================================================
+SEEDS TO TEST:
+[REDACTED — see recovery_data/ALL_TARGETS.txt for actual seeds]
+
+============================================================
+WIF KEYS FOUND:
+[REDACTED — see recovery_data/ALL_TARGETS.txt for actual WIF keys]
+
+============================================================
+EXTENDED PRIVATE KEY (YPRV):
+[REDACTED — see recovery_data/ALL_TARGETS.txt for actual YPRV]
+
+============================================================
+PRIORITY DATA SOURCES:
+
+1. ReadyShare (Router USB) - Gemini said wallet data was downloaded here
+2. HP15 Windows partition - /dev/sda3 (now mounted)
+3. candidate_wallet.dat - ENCRYPTED
+4. Sparrow DBs with fingerprint 942d57df

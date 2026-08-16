@@ -295,3 +295,196 @@ class RecoveryIntegration:
             report["checks"]["log_analysis"] = {"success": False, "error": "mega_scanner.log not found"}
 
         return report
+
+    # ── Target list parsing ──────────────────────────────────────────────
+
+    #: Coins recognised by the parser.  Maps section heading → ticker.
+    _COIN_SECTIONS = {
+        "BITCOIN": "BTC",
+        "LEGACY BTC": "BTC",
+        "LITECOIN": "LTC",
+        "DOGECOIN": "DOGE",
+        "PEERCOIN": "PPC",
+        "SOLANA": "SOL",
+    }
+
+    #: Keys whose values must never be returned by the sanitised loader.
+    _SENSITIVE_SECTIONS = {
+        "SEEDS TO TEST",
+        "WIF KEYS FOUND",
+        "EXTENDED PRIVATE KEY",
+    }
+
+    @staticmethod
+    def _detect_coin(address: str) -> str:
+        """Best-effort coin detection from address prefix."""
+        a = address.strip()
+        if a.startswith(("1", "3", "bc1")):
+            return "BTC"
+        if a.startswith("L") and len(a) in (34, 43):
+            return "LTC"
+        if a.startswith("D"):
+            return "DOGE"
+        if a.startswith("P"):
+            return "PPC"
+        if len(a) in (32, 44) and a.isalnum():
+            return "SOL"
+        return "UNKNOWN"
+
+    def load_targets(
+        self,
+        targets_path: str | None = None,
+        include_sensitive: bool = False,
+    ) -> dict:
+        """Parse ALL_TARGETS.txt and return a structured, sanitised target list.
+
+        Parameters
+        ----------
+        targets_path
+            Path to the targets file.  Defaults to
+            ``recovery_data/ALL_TARGETS.txt`` inside the orchestrator repo.
+        include_sensitive
+            When *False* (default) seeds, WIF keys, and extended private keys
+            are redacted.  Set to *True* only in trusted, local contexts.
+
+        Returns
+        -------
+        dict
+            ``{"success": bool, "targets": [...], "summary": {...},
+            "seeds": [...], "wifs": [...], "yprv": str | None,
+            "data_sources": [...], "error": str | None}``
+        """
+        if targets_path is None:
+            targets_path = str(
+                Path(__file__).resolve().parents[2]
+                / "recovery_data"
+                / "ALL_TARGETS.txt"
+            )
+
+        target_file = Path(targets_path)
+        if not target_file.exists():
+            return {"success": False, "error": f"Targets file not found: {targets_path}"}
+
+        try:
+            raw = target_file.read_text(errors="replace")
+        except Exception as exc:
+            return {"success": False, "error": f"Failed to read targets: {exc}"}
+
+        targets: list[dict] = []
+        seeds: list[dict] = []
+        wifs: list[str] = []
+        yprv: str | None = None
+        data_sources: list[str] = []
+        current_coin = "UNKNOWN"
+        current_section: str | None = None
+
+        for line in raw.splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#") and "=" not in stripped:
+                # Section detection from comments
+                upper = stripped.lstrip("# ").upper()
+                for keyword, ticker in self._COIN_SECTIONS.items():
+                    if keyword in upper:
+                        current_coin = ticker
+                        current_section = "ADDRESSES"
+                        break
+                continue
+
+            # Horizontal rule resets context
+            if stripped.startswith("="):
+                current_section = None
+                continue
+
+            # Section headers (after the ==== rules)
+            if current_section is None:
+                upper = stripped.upper()
+                if "SEEDS TO TEST" in upper:
+                    current_section = "SEEDS"
+                    continue
+                if "WIF KEYS" in upper:
+                    current_section = "WIFS"
+                    continue
+                if "EXTENDED PRIVATE KEY" in upper:
+                    current_section = "YPRV"
+                    continue
+                if "PRIORITY DATA SOURCES" in upper:
+                    current_section = "SOURCES"
+                    continue
+                # Check for coin section in non-comment text too
+                for keyword, ticker in self._COIN_SECTIONS.items():
+                    if keyword in upper:
+                        current_coin = ticker
+                        current_section = "ADDRESSES"
+                        break
+                if current_section is None and current_coin != "UNKNOWN":
+                    current_section = "ADDRESSES"
+                continue
+
+            if current_section == "SEEDS":
+                if include_sensitive:
+                    seeds.append({"raw": stripped})
+                else:
+                    # Redact seed words but keep the label
+                    if ":" in stripped:
+                        label = stripped.split(":")[0]
+                        seeds.append({"label": label, "seed": "[REDACTED]"})
+                    else:
+                        seeds.append({"label": stripped[:20], "seed": "[REDACTED]"})
+                continue
+
+            if current_section == "WIFS":
+                if include_sensitive:
+                    wifs.append(stripped)
+                else:
+                    wifs.append("[REDACTED]")
+                continue
+
+            if current_section == "YPRV":
+                if include_sensitive:
+                    yprv = stripped
+                else:
+                    yprv = "[REDACTED]"
+                continue
+
+            if current_section == "SOURCES":
+                data_sources.append(stripped.lstrip("0123456789. "))
+                continue
+
+            # Default: parse as address line (may have trailing comment)
+            if current_section == "ADDRESSES" or current_coin != "UNKNOWN":
+                # Strip inline comment
+                addr_part = stripped.split("#")[0].strip()
+                comment_part = ""
+                if "#" in stripped:
+                    comment_part = stripped.split("#", 1)[1].strip()
+
+                if addr_part and not addr_part.startswith("#"):
+                    coin = self._detect_coin(addr_part) if current_coin == "UNKNOWN" else current_coin
+                    targets.append({
+                        "address": addr_part,
+                        "coin": coin,
+                        "comment": comment_part,
+                    })
+
+        # Build summary
+        coin_counts: dict[str, int] = {}
+        for t in targets:
+            coin_counts[t["coin"]] = coin_counts.get(t["coin"], 0) + 1
+
+        return {
+            "success": True,
+            "targets": targets,
+            "summary": {
+                "total_addresses": len(targets),
+                "by_coin": coin_counts,
+                "seeds_count": len(seeds),
+                "wifs_count": len(wifs),
+                "has_yprv": yprv is not None,
+                "data_sources_count": len(data_sources),
+            },
+            "seeds": seeds,
+            "wifs": wifs,
+            "yprv": yprv,
+            "data_sources": data_sources,
+            "source_file": str(target_file),
+        }
