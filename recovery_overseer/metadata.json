@@ -1,0 +1,6 @@
+{
+  "name": "Spark Analytics Studio",
+  "description": "Interactive Apache Spark workspace featuring PySpark and Spark SQL notebooks, Catalyst DAG execution plan visualizers, real-time cluster metrics, Model Context Protocol (MCP) AI integration, and Google Workspace Account Map dependency cloud graphs.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

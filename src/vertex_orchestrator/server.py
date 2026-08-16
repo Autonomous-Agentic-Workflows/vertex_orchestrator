@@ -5,11 +5,16 @@ via the HermesBridgeClient. This allows the mobile app to route tasks
 to CrewAI, AutoGen, and Aider running on the host machine with
 Google Cloud Vertex AI credentials.
 
+When Vertex AI is unavailable or rate-limited, the server falls back
+to local Ollama models automatically (see ``/fallback/status``).
+
 Endpoints:
-  GET  /health         — health check
-  POST /execute        — execute a single task
-  POST /batch          — execute multiple tasks
-  GET  /providers      — list available providers/models
+  GET  /health          — health check (includes fallback status)
+  GET  /fallback/status — Ollama fallback configuration & model availability
+  POST /execute         — execute a single task
+  POST /batch           — execute multiple tasks
+  GET  /providers       — list available providers/models
+  GET  /recovery/*      — recovery integration endpoints
 """
 from __future__ import annotations
 
@@ -18,7 +23,7 @@ import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
 
-from vertex_orchestrator.config import VertexAIConfig
+from vertex_orchestrator.config import OllamaConfig, VertexAIConfig
 from vertex_orchestrator.orchestrator import Orchestrator, TaskType
 
 
@@ -61,10 +66,49 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
 
         if path == "/health":
+            fallback_enabled = os.environ.get(
+                "ORCHESTRATOR_FALLBACK", "true"
+            ).lower() in ("true", "1", "yes")
+            ollama_reachable = False
+            ollama_models: list[str] = []
+            if fallback_enabled:
+                from vertex_orchestrator.ollama_runner import check_ollama_available
+                ollama_cfg = OllamaConfig()
+                ollama_reachable, ollama_models = check_ollama_available(ollama_cfg)
             self._send_json(200, {
                 "status": "healthy",
                 "providers": ["crewai", "autogen", "aider"],
                 "project_id": os.environ.get("GOOGLE_CLOUD_PROJECT", "not-set"),
+                "fallback_enabled": fallback_enabled,
+                "fallback_ollama_reachable": ollama_reachable,
+                "fallback_ollama_models": ollama_models,
+            })
+        elif path == "/fallback/status":
+            # Report whether fallback is enabled and which Ollama models are available.
+            fallback_enabled = os.environ.get(
+                "ORCHESTRATOR_FALLBACK", "true"
+            ).lower() in ("true", "1", "yes")
+            ollama_cfg = OllamaConfig()
+            from vertex_orchestrator.ollama_runner import check_ollama_available
+            reachable, available_models = check_ollama_available(ollama_cfg)
+
+            # Determine which mapped models are actually present on the Ollama host.
+            mapped_models = ollama_cfg.model_mapping
+            model_status = {}
+            for task_type_value, model_name in mapped_models.items():
+                model_status[task_type_value] = {
+                    "model": model_name,
+                    "available": model_name in available_models,
+                }
+
+            self._send_json(200, {
+                "fallback_enabled": fallback_enabled,
+                "ollama_endpoint": ollama_cfg.endpoint,
+                "ollama_api_base": ollama_cfg.api_base,
+                "ollama_reachable": reachable,
+                "model_mapping": mapped_models,
+                "model_status": model_status,
+                "available_models": available_models,
             })
         elif path == "/providers":
             self._send_json(200, {
@@ -74,6 +118,21 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
                     {"name": "aider", "task_type": "EDIT", "models": ["vertex_ai/gemini-2.5-pro"]},
                 ]
             })
+        elif path == "/overseer/status":
+            from vertex_orchestrator.overseer_manager import get_overseer
+            overseer = get_overseer()
+            self._send_json(200, {
+                "running": overseer.is_running(),
+                "port": overseer.port,
+                "health": overseer.check_health() if overseer.is_running() else None,
+            })
+        elif path == "/overseer/mcp/info":
+            from vertex_orchestrator.overseer_manager import get_overseer
+            overseer = get_overseer()
+            if not overseer.is_running():
+                self._send_json(503, {"success": False, "error": "overseer not running — POST /overseer/start first"})
+                return
+            self._send_json(200, overseer.get_mcp_info())
         else:
             self._send_json(404, {"error": "not found"})
 
@@ -98,6 +157,11 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             location=location,
             model=model,
             temperature=body.get("temperature", 0.2),
+            fallback_enabled=body.get(
+                "fallback_enabled",
+                os.environ.get("ORCHESTRATOR_FALLBACK", "true").lower()
+                in ("true", "1", "yes"),
+            ),
         )
         orch = Orchestrator(config=config)
 
@@ -189,6 +253,17 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             report = ri.full_status_report()
             self._send_json(200, {"success": True, "report": report})
 
+        elif path == "/recovery/targets":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.recovery import RecoveryIntegration
+            include_sensitive = self.query_params.get("include_sensitive", "false").lower() == "true"
+            ri = RecoveryIntegration(config=config, recovery_repo_path=".")
+            result = ri.load_targets(include_sensitive=include_sensitive)
+            status = 200 if result.get("success") else 404
+            self._send_json(status, result)
+
         elif path == "/recovery/analyze-seeds":
             if not self._check_auth():
                 self._send_json(401, {"success": False, "error": "Unauthorized"})
@@ -214,6 +289,50 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             result = ri.generate_passphrase_variants(base_passphrases)
             self._send_json(200, result)
 
+        elif path == "/overseer/start":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.overseer_manager import get_overseer
+            overseer = get_overseer()
+            result = overseer.start()
+            self._send_json(200, result)
+
+        elif path == "/overseer/stop":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.overseer_manager import get_overseer
+            overseer = get_overseer()
+            result = overseer.stop()
+            self._send_json(200, result)
+
+        elif path == "/overseer/mcp":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.overseer_manager import get_overseer
+            overseer = get_overseer()
+            if not overseer.is_running():
+                self._send_json(503, {"success": False, "error": "overseer not running — POST /overseer/start first"})
+                return
+            result = overseer.proxy_mcp(body)
+            self._send_json(200, result)
+
+        elif path.startswith("/overseer/proxy/"):
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.overseer_manager import get_overseer
+            overseer = get_overseer()
+            if not overseer.is_running():
+                self._send_json(503, {"success": False, "error": "overseer not running — POST /overseer/start first"})
+                return
+            # Strip /overseer/proxy prefix and forward to recovery-overseer
+            overseer_path = "/" + path[len("/overseer/proxy/"):]
+            result = overseer.proxy_request("POST", overseer_path, body)
+            self._send_json(200, result)
+
         elif path == "/recovery/analyze-log":
             if not self._check_auth():
                 self._send_json(401, {"success": False, "error": "Unauthorized"})
@@ -231,11 +350,13 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
 def run_server(host: str = "0.0.0.0", port: int = 8000) -> None:
     """Start the orchestrator REST API server."""
     server = HTTPServer((host, port), OrchestratorHandler)
+    fallback_enabled = os.environ.get("ORCHESTRATOR_FALLBACK", "true").lower() in ("true", "1", "yes")
     print(f"Vertex Orchestrator backend running on http://{host}:{port}")
     print(f"  Project: {os.environ.get('GOOGLE_CLOUD_PROJECT', 'NOT SET')}")
     print(f"  Auth: {'ENABLED (ORCHESTRATOR_API_KEY set)' if os.environ.get('ORCHESTRATOR_API_KEY') else 'OPEN (no key set — local dev only)'}")
+    print(f"  Fallback: {'ENABLED' if fallback_enabled else 'DISABLED'} (Ollama at 127.0.0.1:11434)")
     print(f"  File access: restricted to {os.environ.get('ORCHESTRATOR_ALLOWED_BASE', '<ConsolidatedDevelopment>')}")
-    print(f"  Endpoints: /health, /execute, /batch, /providers, /recovery/*")
+    print(f"  Endpoints: /health, /fallback/status, /execute, /batch, /providers, /recovery/*, /overseer/*")
     print(f"  Press Ctrl+C to stop")
     try:
         server.serve_forever()

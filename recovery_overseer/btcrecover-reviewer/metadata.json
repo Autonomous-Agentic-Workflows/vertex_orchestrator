@@ -1,0 +1,5 @@
+{
+  "name": "Gemini Code Reviewer for BTCRecover",
+  "description": "An AI-powered tool that automatically reviews code snippets for the BTCRecover-Master project, providing feedback on quality, security, and performance using Google's Gemini API.",
+  "requestFramePermissions": []
+}
