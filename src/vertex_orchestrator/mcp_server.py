@@ -142,6 +142,35 @@ TOOLS: list[dict[str, Any]] = [
         "description": "Orchestrator health check — lists providers, project ID, and fallback status.",
         "inputSchema": {"type": "object", "properties": {}},
     },
+    {
+        "name": "webhook_register",
+        "description": "Register a webhook callback URL to receive event notifications (e.g. task.complete).",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "url": {"type": "string", "description": "Callback URL (must start with http)"},
+                "events": {"type": "array", "items": {"type": "string"}, "description": "Event types to subscribe to (default: [\"*\"] for all)"},
+                "secret": {"type": "string", "description": "Optional secret sent as X-Webhook-Secret header"},
+            },
+            "required": ["url"],
+        },
+    },
+    {
+        "name": "webhook_unregister",
+        "description": "Remove a registered webhook callback URL.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "url": {"type": "string", "description": "Callback URL to remove"},
+            },
+            "required": ["url"],
+        },
+    },
+    {
+        "name": "webhook_list",
+        "description": "List all registered webhook callbacks.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
 ]
 
 RESOURCES: list[dict[str, Any]] = [
@@ -233,6 +262,12 @@ def dispatch_tool(name: str, args: dict[str, Any]) -> dict[str, Any]:
         return _post("/overseer/start", {})
     elif name == "overseer_stop":
         return _post("/overseer/stop", {})
+    elif name == "webhook_register":
+        return _post("/webhooks/register", args)
+    elif name == "webhook_unregister":
+        return _post("/webhooks/unregister", args)
+    elif name == "webhook_list":
+        return _get("/webhooks")
     else:
         return {"success": False, "error": f"Unknown tool: {name}"}
 
