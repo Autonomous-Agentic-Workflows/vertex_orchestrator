@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conor's AI Agent Topology — Integration Audit</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: #020617;
+      min-height: 100vh;
+      padding: 2rem;
+      color: white;
+    }
+    .container { max-width: 1240px; margin: 0 auto; }
+    .header { margin-bottom: 2rem; }
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .pulse-dot {
+      width: 12px;
+      height: 12px;
+      background: #34d399;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
+    .subtitle { color: #94a3b8; font-size: 0.875rem; margin-left: 1.75rem; }
+    .diagram-container {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 1rem;
+      border: 1px solid #1e293b;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+    svg { width: 100%; min-width: 1100px; display: block; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .card {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 0.75rem;
+      border: 1px solid #1e293b;
+      padding: 1.25rem;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .card-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .card-dot.cyan { background: #22d3ee; }
+    .card-dot.emerald { background: #34d399; }
+    .card-dot.violet { background: #a78bfa; }
+    .card-dot.amber { background: #fbbf24; }
+    .card-dot.rose { background: #fb7185; }
+    .card-dot.orange { background: #fb923c; }
+    .card h3 { font-size: 0.875rem; font-weight: 600; }
+    .card ul { list-style: none; color: #94a3b8; font-size: 0.75rem; }
+    .card li { margin-bottom: 0.375rem; }
+    .card .fixed { color: #34d399; }
+    .card .pending { color: #fbbf24; }
+    .footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      color: #475569;
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-row">
+        <div class="pulse-dot" style="background: #34d399;"></div>
+        <h1>Conor's AI Agent Topology — Integration Audit</h1>
+      </div>
+      <p class="subtitle">Hermes + OpenClaw + Vertex AI + AGY SDK + MCP — 2026-08-16 audit with fixes applied</p>
+    </div>
+
+    <!-- Main Diagram -->
+    <div class="diagram-container">
+      <svg viewBox="0 0 1200 1020">
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+          </marker>
+          <marker id="arrowhead-rose" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185" />
+          </marker>
+          <marker id="arrowhead-emerald" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#34d399" />
+          </marker>
+          <marker id="arrowhead-amber" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24" />
+          </marker>
+          <marker id="arrowhead-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee" />
+          </marker>
+          <marker id="arrowhead-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb923c" />
+          </marker>
+          <marker id="arrowhead-slate" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8" />
+          </marker>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+
+        <!-- Background Grid -->
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <!-- =================================================================
+             REGION BOUNDARIES
+             ================================================================= -->
+
+        <!-- WSL2 Host boundary -->
+        <rect x="175" y="125" width="720" height="580" rx="12" fill="rgba(34, 211, 238, 0.03)" stroke="#22d3ee" stroke-width="1" stroke-dasharray="8,4" opacity="0.5"/>
+        <text x="188" y="143" fill="#22d3ee" font-size="10" font-weight="600" opacity="0.7">WSL2 Host — AlmaLinux-10 (kernel 6.18.33.2, mirrored loopback)</text>
+
+        <!-- GCP Cloud boundary -->
+        <rect x="910" y="125" width="280" height="580" rx="12" fill="rgba(251, 191, 36, 0.05)" stroke="#fbbf24" stroke-width="1" stroke-dasharray="8,4"/>
+        <text x="922" y="143" fill="#fbbf24" font-size="10" font-weight="600">Google Cloud Platform — 14 projects</text>
+
+        <!-- Agent Hub boundary -->
+        <rect x="360" y="140" width="325" height="230" rx="8" fill="transparent" stroke="#fb923c" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+        <text x="368" y="155" fill="#fb923c" font-size="8" opacity="0.7">Agent Hub — Cross-Agent Bus (9 agents)</text>
+
+        <!-- AGY SDK boundary (NEW) -->
+        <rect x="190" y="495" width="700" height="55" rx="8" fill="transparent" stroke="#34d399" stroke-width="1" stroke-dasharray="4,4" opacity="0.3"/>
+        <text x="198" y="510" fill="#34d399" font-size="8" opacity="0.5">Antigravity (AGY) SDK — dedicated venv (protobuf 7.35.1)</text>
+
+        <!-- =================================================================
+             ARROWS
+             ================================================================= -->
+
+        <!-- Telegram → OpenClaw (dashed rose, auth flow) -->
+        <path d="M 155 170 L 175 170 L 175 247 L 188 247" fill="none" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="5,5" marker-end="url(#arrowhead-rose)"/>
+        <text x="162" y="210" fill="#fb7185" font-size="8">Bot API</text>
+
+        <!-- DevGate → vertex_orchestrator (cyan, HTTPS) -->
+        <path d="M 155 245 L 175 245 L 175 420 L 363 420" fill="none" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead-cyan)"/>
+        <text x="182" y="340" fill="#94a3b8" font-size="8">HTTPS :8000</text>
+
+        <!-- CLI → Hermes (slate) -->
+        <line x1="155" y1="320" x2="188" y2="177" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead-slate)"/>
+
+        <!-- GitHub → git-profiles (slate, curved) -->
+        <path d="M 155 420 L 175 420 L 175 283 L 470 283" fill="none" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead-slate)"/>
+        <text x="182" y="395" fill="#94a3b8" font-size="8">git ops</text>
+
+        <!-- Hermes → Ollama (emerald) -->
+        <line x1="340" y1="177" x2="703" y2="175" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead-emerald)"/>
+        <text x="500" y="170" fill="#94a3b8" font-size="8" text-anchor="middle">OpenAI API :11434</text>
+
+        <!-- Hermes → MCP servers (NEW — cyan) -->
+        <path d="M 265 205 L 265 495 L 190 495 L 190 535" fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrowhead-cyan)"/>
+        <text x="145" y="490" fill="#22d3ee" font-size="7">MCP tools</text>
+
+        <!-- OpenClaw → Ollama (emerald) -->
+        <line x1="340" y1="247" x2="703" y2="233" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead-emerald)"/>
+
+        <!-- ClawdBot → OpenClaw (emerald) -->
+        <path d="M 265 290 L 265 275" fill="none" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead-emerald)"/>
+        <text x="272" y="285" fill="#94a3b8" font-size="7">ws://18789</text>
+
+        <!-- Aider → Vertex AI -->
+        <path d="M 340 387 L 892 387 L 892 177 L 918 177" fill="none" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead-amber)"/>
+        <text x="600" y="382" fill="#94a3b8" font-size="8" text-anchor="middle">Vertex AI (primary)</text>
+
+        <!-- Aider → Ollama (dashed emerald, fallback) -->
+        <path d="M 340 395 L 600 395 L 600 364 L 703 364" fill="none" stroke="#34d399" stroke-width="1.5" stroke-dasharray="5,5" marker-end="url(#arrowhead-emerald)"/>
+        <text x="560" y="388" fill="#64748b" font-size="7">fallback</text>
+
+        <!-- OpenCode → Ollama (emerald) -->
+        <line x1="340" y1="457" x2="703" y2="409" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead-emerald)"/>
+
+        <!-- ollama-router → Ollama models (orange) -->
+        <line x1="677" y1="335" x2="703" y2="229" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrowhead-orange)"/>
+
+        <!-- vertex_orchestrator → Vertex AI -->
+        <path d="M 680 420 L 892 420 L 892 177 L 918 177" fill="none" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead-amber)"/>
+        <text x="850" y="415" fill="#94a3b8" font-size="8" text-anchor="end">CrewAI/AutoGen/Aider</text>
+
+        <!-- Orchestrator → agents (fan-out) -->
+        <line x1="522" y1="198" x2="414" y2="210" stroke="#fb923c" stroke-width="1" opacity="0.4" marker-end="url(#arrowhead-orange)"/>
+        <line x1="522" y1="198" x2="521" y2="210" stroke="#fb923c" stroke-width="1" opacity="0.4" marker-end="url(#arrowhead-orange)"/>
+        <line x1="522" y1="198" x2="628" y2="210" stroke="#fb923c" stroke-width="1" opacity="0.4" marker-end="url(#arrowhead-orange)"/>
+
+        <!-- vertex-orchestration → vertex_orchestrator -->
+        <line x1="414" y1="304" x2="450" y2="378" stroke="#34d399" stroke-width="1" opacity="0.5" marker-end="url(#arrowhead-emerald)"/>
+
+        <!-- AGY Bridge → Vertex AI (emerald, NEW) -->
+        <path d="M 540 523 L 892 523 L 892 177 L 918 177" fill="none" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead-amber)"/>
+        <text x="700" y="518" fill="#94a3b8" font-size="8" text-anchor="middle">AGY → Vertex AI</text>
+
+        <!-- AGY Bridge → MasterRecoveryAgents (rose) -->
+        <path d="M 340 523 L 155 523 L 155 490" fill="none" stroke="#fb7185" stroke-width="1.5" marker-end="url(#arrowhead-rose)"/>
+        <text x="200" y="518" fill="#fb7185" font-size="7">recovery_agent</text>
+
+        <!-- =================================================================
+             COMPONENT BOXES — External column (left)
+             ================================================================= -->
+
+        <!-- Telegram Bot -->
+        <rect x="20" y="145" width="135" height="50" rx="6" fill="#0f172a"/>
+        <rect x="20" y="145" width="135" height="50" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="87" y="167" fill="white" font-size="11" font-weight="600" text-anchor="middle">Telegram Bot</text>
+        <text x="87" y="183" fill="#94a3b8" font-size="8" text-anchor="middle">gemmagitsclawd_bot</text>
+
+        <!-- DevGate Android -->
+        <rect x="20" y="220" width="135" height="50" rx="6" fill="#0f172a"/>
+        <rect x="20" y="220" width="135" height="50" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="87" y="242" fill="white" font-size="11" font-weight="600" text-anchor="middle">DevGate</text>
+        <text x="87" y="258" fill="#94a3b8" font-size="8" text-anchor="middle">Android Client</text>
+
+        <!-- CLI Terminal -->
+        <rect x="20" y="295" width="135" height="50" rx="6" fill="#0f172a"/>
+        <rect x="20" y="295" width="135" height="50" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="87" y="317" fill="white" font-size="11" font-weight="600" text-anchor="middle">CLI Terminal</text>
+        <text x="87" y="333" fill="#94a3b8" font-size="8" text-anchor="middle">WSL Shell</text>
+
+        <!-- GitHub Orgs -->
+        <rect x="20" y="370" width="135" height="110" rx="6" fill="#0f172a"/>
+        <rect x="20" y="370" width="135" height="110" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="87" y="390" fill="white" font-size="11" font-weight="600" text-anchor="middle">GitHub Orgs</text>
+        <text x="87" y="408" fill="#94a3b8" font-size="8" text-anchor="middle">• AAW (60 repos)</text>
+        <text x="87" y="422" fill="#94a3b8" font-size="8" text-anchor="middle">• conor-ops (7 repos)</text>
+        <text x="87" y="436" fill="#94a3b8" font-size="8" text-anchor="middle">• yajlang (13 repos)</text>
+        <text x="87" y="458" fill="#fbbf24" font-size="7" text-anchor="middle">⚠ SSH key not on GitHub</text>
+        <text x="87" y="470" fill="#94a3b8" font-size="7" text-anchor="middle">PAT: classic + fine-grained</text>
+
+        <!-- =================================================================
+             COMPONENT BOXES — Local Agents (inside WSL, left column)
+             ================================================================= -->
+
+        <!-- Hermes Agent -->
+        <rect x="190" y="150" width="150" height="55" rx="6" fill="#0f172a"/>
+        <rect x="190" y="150" width="150" height="55" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="265" y="172" fill="white" font-size="11" font-weight="600" text-anchor="middle">Hermes Agent</text>
+        <text x="265" y="188" fill="#94a3b8" font-size="8" text-anchor="middle">v0.20.1 | glm-5.2:cloud</text>
+        <text x="265" y="198" fill="#34d399" font-size="7" text-anchor="middle">+ MCP cloudrun/bigquery</text>
+
+        <!-- OpenClaw -->
+        <rect x="190" y="220" width="150" height="55" rx="6" fill="#0f172a"/>
+        <rect x="190" y="220" width="150" height="55" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="265" y="242" fill="white" font-size="11" font-weight="600" text-anchor="middle">OpenClaw</text>
+        <text x="265" y="258" fill="#94a3b8" font-size="8" text-anchor="middle">v2026.7.1 | :18789</text>
+        <text x="265" y="268" fill="#34d399" font-size="7" text-anchor="middle">gateway + Telegram</text>
+
+        <!-- ClawdBot -->
+        <rect x="190" y="290" width="150" height="55" rx="6" fill="#0f172a"/>
+        <rect x="190" y="290" width="150" height="55" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="265" y="312" fill="white" font-size="11" font-weight="600" text-anchor="middle">ClawdBot</text>
+        <text x="265" y="328" fill="#94a3b8" font-size="8" text-anchor="middle">BTC Recovery Agent</text>
+        <text x="265" y="338" fill="#34d399" font-size="7" text-anchor="middle">ws → OpenClaw :18789</text>
+
+        <!-- Aider -->
+        <rect x="190" y="360" width="150" height="55" rx="6" fill="#0f172a"/>
+        <rect x="190" y="360" width="150" height="55" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="265" y="382" fill="white" font-size="11" font-weight="600" text-anchor="middle">Aider</text>
+        <text x="265" y="398" fill="#94a3b8" font-size="8" text-anchor="middle">v0.86.2</text>
+        <text x="265" y="408" fill="#fbbf24" font-size="7" text-anchor="middle">Vertex AI / ollama fallback</text>
+
+        <!-- OpenCode -->
+        <rect x="190" y="430" width="150" height="55" rx="6" fill="#0f172a"/>
+        <rect x="190" y="430" width="150" height="55" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="265" y="452" fill="white" font-size="11" font-weight="600" text-anchor="middle">OpenCode</text>
+        <text x="265" y="468" fill="#94a3b8" font-size="8" text-anchor="middle">v0.0.55</text>
+        <text x="265" y="478" fill="#34d399" font-size="7" text-anchor="middle">ollama provider</text>
+
+        <!-- =================================================================
+             AGENT HUB — Orchestrator + 9 Agents
+             ================================================================= -->
+
+        <!-- Orchestrator -->
+        <rect x="365" y="150" width="315" height="48" rx="6" fill="#0f172a"/>
+        <rect x="365" y="150" width="315" height="48" rx="6" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1.5"/>
+        <text x="522" y="170" fill="white" font-size="11" font-weight="600" text-anchor="middle">Agent Hub Orchestrator</text>
+        <text x="522" y="186" fill="#94a3b8" font-size="8" text-anchor="middle">13 keyword → agent routes | in-process A2A bus</text>
+
+        <!-- 9 Agents in 3×3 grid -->
+        <!-- Row 1 -->
+        <rect x="365" y="210" width="98" height="42" rx="6" fill="#0f172a"/>
+        <rect x="365" y="210" width="98" height="42" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="414" y="229" fill="white" font-size="9" font-weight="600" text-anchor="middle">compliance</text>
+        <text x="414" y="241" fill="#94a3b8" font-size="7" text-anchor="middle">audit · IAM · SIEM</text>
+
+        <rect x="472" y="210" width="98" height="42" rx="6" fill="#0f172a"/>
+        <rect x="472" y="210" width="98" height="42" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="521" y="229" fill="white" font-size="9" font-weight="600" text-anchor="middle">gdpr</text>
+        <text x="521" y="241" fill="#94a3b8" font-size="7" text-anchor="middle">ROPA · DPIA · DSR</text>
+
+        <rect x="579" y="210" width="98" height="42" rx="6" fill="#0f172a"/>
+        <rect x="579" y="210" width="98" height="42" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="628" y="229" fill="white" font-size="9" font-weight="600" text-anchor="middle">drive-layout</text>
+        <text x="628" y="241" fill="#94a3b8" font-size="7" text-anchor="middle">partitions · tiers</text>
+
+        <!-- Row 2 -->
+        <rect x="365" y="262" width="98" height="42" rx="6" fill="#0f172a"/>
+        <rect x="365" y="262" width="98" height="42" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="414" y="281" fill="white" font-size="9" font-weight="600" text-anchor="middle">vertex-orch</text>
+        <text x="414" y="293" fill="#94a3b8" font-size="7" text-anchor="middle">CrewAI · AutoGen</text>
+
+        <rect x="472" y="262" width="98" height="42" rx="6" fill="#0f172a"/>
+        <rect x="472" y="262" width="98" height="42" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="521" y="281" fill="white" font-size="9" font-weight="600" text-anchor="middle">git-profiles</text>
+        <text x="521" y="293" fill="#94a3b8" font-size="7" text-anchor="middle">clone · identity</text>
+
+        <rect x="579" y="262" width="98" height="42" rx="6" fill="#0f172a"/>
+        <rect x="579" y="262" width="98" height="42" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="628" y="281" fill="white" font-size="9" font-weight="600" text-anchor="middle">backup</text>
+        <text x="628" y="293" fill="#94a3b8" font-size="7" text-anchor="middle">robocopy · wbadmin</text>
+
+        <!-- Row 3 -->
+        <rect x="365" y="314" width="98" height="42" rx="6" fill="#0f172a"/>
+        <rect x="365" y="314" width="98" height="42" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="414" y="333" fill="white" font-size="9" font-weight="600" text-anchor="middle">hermes</text>
+        <text x="414" y="345" fill="#94a3b8" font-size="7" text-anchor="middle">chat subprocess</text>
+
+        <rect x="472" y="314" width="98" height="42" rx="6" fill="#0f172a"/>
+        <rect x="472" y="314" width="98" height="42" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="521" y="333" fill="white" font-size="9" font-weight="600" text-anchor="middle">openclaw</text>
+        <text x="521" y="345" fill="#94a3b8" font-size="7" text-anchor="middle">pgrep · ws status</text>
+
+        <rect x="579" y="314" width="98" height="42" rx="6" fill="#0f172a"/>
+        <rect x="579" y="314" width="98" height="42" rx="6" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1.5"/>
+        <text x="628" y="333" fill="white" font-size="9" font-weight="600" text-anchor="middle">ollama-router</text>
+        <text x="628" y="345" fill="#fb923c" font-size="7" text-anchor="middle">model picker</text>
+
+        <!-- =================================================================
+             VERTEX_ORCHESTRATOR
+             ================================================================= -->
+
+        <rect x="365" y="378" width="315" height="92" rx="6" fill="#0f172a"/>
+        <rect x="365" y="378" width="315" height="92" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="522" y="398" fill="white" font-size="11" font-weight="600" text-anchor="middle">vertex_orchestrator</text>
+        <text x="522" y="414" fill="#94a3b8" font-size="8" text-anchor="middle">REST API :8000 | 31/31 tests pass</text>
+        <text x="522" y="428" fill="#94a3b8" font-size="8" text-anchor="middle">CrewAI→ANALYSIS | AutoGen→CONVERSATION</text>
+        <text x="522" y="442" fill="#94a3b8" font-size="8" text-anchor="middle">Aider→EDIT | recovery.py (sanitized)</text>
+        <text x="522" y="458" fill="#fbbf24" font-size="7" text-anchor="middle">⚠ API_KEY still "test-key" | CORS: * (Android)</text>
+
+        <!-- =================================================================
+             AGY SDK + MCP LAYER (NEW)
+             ================================================================= -->
+
+        <!-- AGY Bridge -->
+        <rect x="345" y="505" width="200" height="40" rx="6" fill="#0f172a"/>
+        <rect x="345" y="505" width="200" height="40" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="445" y="522" fill="white" font-size="10" font-weight="600" text-anchor="middle">AGY Cross-Agentic Bridge</text>
+        <text x="445" y="535" fill="#34d399" font-size="7" text-anchor="middle">✓ FIXED — dedicated venv, protobuf 7.35.1</text>
+
+        <!-- MCP: Cloud Run -->
+        <rect x="565" y="505" width="160" height="40" rx="6" fill="#0f172a"/>
+        <rect x="565" y="505" width="160" height="40" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="645" y="522" fill="white" font-size="10" font-weight="600" text-anchor="middle">MCP: Cloud Run</text>
+        <text x="645" y="535" fill="#34d399" font-size="7" text-anchor="middle">✓ 8 tools | @google-cloud/cloud-run-mcp</text>
+
+        <!-- MCP: BigQuery -->
+        <rect x="745" y="505" width="160" height="40" rx="6" fill="#0f172a"/>
+        <rect x="745" y="505" width="160" height="40" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="825" y="522" fill="white" font-size="10" font-weight="600" text-anchor="middle">MCP: BigQuery</text>
+        <text x="825" y="535" fill="#34d399" font-size="7" text-anchor="middle">✓ 5 tools | @channel.io/bigquery-mcp</text>
+
+        <!-- agy-bridge launcher annotation -->
+        <text x="445" y="555" fill="#475569" font-size="7" text-anchor="middle">launcher: /home/conor-ops/bin/agy-bridge</text>
+
+        <!-- =================================================================
+             OLLAMA (right side, inside WSL)
+             ================================================================= -->
+
+        <rect x="705" y="150" width="170" height="50" rx="6" fill="#0f172a"/>
+        <rect x="705" y="150" width="170" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="790" y="172" fill="white" font-size="11" font-weight="600" text-anchor="middle">Ollama Server</text>
+        <text x="790" y="188" fill="#94a3b8" font-size="8" text-anchor="middle">v0.32.13 | 127.0.0.1:11434</text>
+
+        <rect x="705" y="210" width="170" height="40" rx="6" fill="#0f172a"/>
+        <rect x="705" y="210" width="170" height="40" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="790" y="228" fill="white" font-size="10" font-weight="600" text-anchor="middle">glm-5.2:cloud</text>
+        <text x="790" y="241" fill="#fbbf24" font-size="7" text-anchor="middle">756B · primary · cloud</text>
+
+        <rect x="705" y="255" width="170" height="40" rx="6" fill="#0f172a"/>
+        <rect x="705" y="255" width="170" height="40" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="790" y="273" fill="white" font-size="10" font-weight="600" text-anchor="middle">gemma4:31b</text>
+        <text x="790" y="286" fill="#94a3b8" font-size="7" text-anchor="middle">19GB · Q4_K_M · local</text>
+
+        <rect x="705" y="300" width="170" height="40" rx="6" fill="#0f172a"/>
+        <rect x="705" y="300" width="170" height="40" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="790" y="318" fill="white" font-size="10" font-weight="600" text-anchor="middle">kimi-k3:cloud</text>
+        <text x="790" y="331" fill="#fbbf24" font-size="7" text-anchor="middle">2.81T · 1M ctx · cloud</text>
+
+        <rect x="705" y="345" width="170" height="40" rx="6" fill="#0f172a"/>
+        <rect x="705" y="345" width="170" height="40" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="790" y="363" fill="white" font-size="10" font-weight="600" text-anchor="middle">gemma4:26b</text>
+        <text x="790" y="376" fill="#94a3b8" font-size="7" text-anchor="middle">17GB · Q4_K_M · local</text>
+
+        <rect x="705" y="390" width="170" height="40" rx="6" fill="#0f172a"/>
+        <rect x="705" y="390" width="170" height="40" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="790" y="408" fill="white" font-size="10" font-weight="600" text-anchor="middle">gemma4:latest</text>
+        <text x="790" y="421" fill="#94a3b8" font-size="7" text-anchor="middle">9.6GB · Q4_K_M · local</text>
+
+        <text x="790" y="445" fill="#475569" font-size="7" text-anchor="middle">/usr/share/ollama/.ollama/models</text>
+        <text x="790" y="455" fill="#fbbf24" font-size="7" text-anchor="middle">⚠ 47GB store not yet moved to Windows</text>
+
+        <!-- =================================================================
+             GCP CLOUD (right column)
+             ================================================================= -->
+
+        <rect x="920" y="150" width="260" height="55" rx="6" fill="#0f172a"/>
+        <rect x="920" y="150" width="260" height="55" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="1050" y="172" fill="white" font-size="11" font-weight="600" text-anchor="middle">Vertex AI</text>
+        <text x="1050" y="188" fill="#94a3b8" font-size="8" text-anchor="middle">master-recovery-hub-2026 · us-central1</text>
+
+        <rect x="920" y="220" width="260" height="80" rx="6" fill="#0f172a"/>
+        <rect x="920" y="220" width="260" height="80" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="1050" y="240" fill="white" font-size="11" font-weight="600" text-anchor="middle">Gemini Models</text>
+        <text x="1050" y="258" fill="#94a3b8" font-size="8" text-anchor="middle">• gemini-2.5-pro (analysis)</text>
+        <text x="1050" y="272" fill="#94a3b8" font-size="8" text-anchor="middle">• gemini-2.5-flash (conversation)</text>
+        <text x="1050" y="288" fill="#fbbf24" font-size="7" text-anchor="middle">via litellm + ADC credentials</text>
+
+        <rect x="920" y="315" width="260" height="70" rx="6" fill="#0f172a"/>
+        <rect x="920" y="315" width="260" height="70" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="1050" y="335" fill="white" font-size="11" font-weight="600" text-anchor="middle">Fence Estimate Tool</text>
+        <text x="1050" y="351" fill="#94a3b8" font-size="8" text-anchor="middle">gen-lang-client-0999709111</text>
+        <text x="1050" y="365" fill="#94a3b8" font-size="8" text-anchor="middle">FastAPI + Gemini Vision</text>
+        <text x="1050" y="378" fill="#34d399" font-size="7" text-anchor="middle">✓ .env created (gen-lang-client project)</text>
+
+        <rect x="920" y="400" width="260" height="70" rx="6" fill="#0f172a"/>
+        <rect x="920" y="400" width="260" height="70" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="1050" y="420" fill="white" font-size="11" font-weight="600" text-anchor="middle">GCP Projects</text>
+        <text x="1050" y="438" fill="#94a3b8" font-size="8" text-anchor="middle">14 total · 2 active</text>
+        <text x="1050" y="452" fill="#94a3b8" font-size="8" text-anchor="middle">• master-recovery-hub-2026</text>
+        <text x="1050" y="466" fill="#94a3b8" font-size="8" text-anchor="middle">• gen-lang-client-0999709111</text>
+
+        <rect x="920" y="485" width="260" height="75" rx="6" fill="#0f172a"/>
+        <rect x="920" y="485" width="260" height="75" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+        <text x="1050" y="505" fill="white" font-size="11" font-weight="600" text-anchor="middle">Recovery Operation</text>
+        <text x="1050" y="521" fill="#94a3b8" font-size="8" text-anchor="middle">MasterRecovery3 (cloned)</text>
+        <text x="1050" y="535" fill="#94a3b8" font-size="8" text-anchor="middle">mega_scanner.py patched</text>
+        <text x="1050" y="549" fill="#fb7185" font-size="7" text-anchor="middle">~$200K+ BTC/LTC/DOGE/PPC · 6 tracks</text>
+
+        <!-- =================================================================
+             STORAGE LAYER
+             ================================================================= -->
+
+        <rect x="175" y="730" width="1015" height="90" rx="12" fill="rgba(76, 29, 149, 0.03)" stroke="#a78bfa" stroke-width="1" stroke-dasharray="8,4" opacity="0.4"/>
+        <text x="188" y="748" fill="#a78bfa" font-size="10" font-weight="600" opacity="0.7">Storage Layer — accessible via /mnt/ from WSL2</text>
+
+        <rect x="190" y="755" width="200" height="55" rx="6" fill="#0f172a"/>
+        <rect x="190" y="755" width="200" height="55" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="290" y="777" fill="white" font-size="11" font-weight="600" text-anchor="middle">M: Drive</text>
+        <text x="290" y="793" fill="#94a3b8" font-size="8" text-anchor="middle">10TB Storage Space</text>
+        <text x="290" y="803" fill="#a78bfa" font-size="7" text-anchor="middle">/mnt/m · repo backups · slow writes</text>
+
+        <rect x="420" y="755" width="200" height="55" rx="6" fill="#0f172a"/>
+        <rect x="420" y="755" width="200" height="55" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="520" y="777" fill="white" font-size="11" font-weight="600" text-anchor="middle">OneDrive</text>
+        <text x="520" y="793" fill="#94a3b8" font-size="8" text-anchor="middle">ConsolidatedDevelopment/</text>
+        <text x="520" y="803" fill="#a78bfa" font-size="7" text-anchor="middle">/mnt/c · vertex_orchestrator source</text>
+
+        <rect x="650" y="755" width="200" height="55" rx="6" fill="#0f172a"/>
+        <rect x="650" y="755" width="200" height="55" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="750" y="777" fill="white" font-size="11" font-weight="600" text-anchor="middle">WSL2 Filesystem</text>
+        <text x="750" y="793" fill="#94a3b8" font-size="8" text-anchor="middle">/home/conor-ops</text>
+        <text x="750" y="803" fill="#a78bfa" font-size="7" text-anchor="middle">AlmaLinux-10 vhdx · .hermes · .openclaw</text>
+
+        <rect x="880" y="755" width="200" height="55" rx="6" fill="#0f172a"/>
+        <rect x="880" y="755" width="200" height="55" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="980" y="777" fill="white" font-size="11" font-weight="600" text-anchor="middle">Windows 11 Host</text>
+        <text x="980" y="793" fill="#94a3b8" font-size="8" text-anchor="middle">16 cores · 32GB RAM</text>
+        <text x="980" y="803" fill="#94a3b8" font-size="7" text-anchor="middle">/mnt/c/Users/jayla · HOMELAB</text>
+
+        <!-- =================================================================
+             AUDIT STATUS BAR (NEW)
+             ================================================================= -->
+
+        <rect x="175" y="580" width="700" height="55" rx="6" fill="#0f172a"/>
+        <rect x="175" y="580" width="700" height="55" rx="6" fill="rgba(6, 78, 59, 0.2)" stroke="#34d399" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="525" y="600" fill="#34d399" font-size="10" font-weight="600" text-anchor="middle">Integration Audit: 28 pass · 1 warn · 0 fail · 4 fixes applied this session</text>
+        <text x="525" y="615" fill="#94a3b8" font-size="8" text-anchor="middle">✓ AGY SDK fixed (protobuf 7.35.1 venv)  ✓ MCP cloudrun+bigquery wired to Hermes  ✓ Fence tool .env created</text>
+        <text x="525" y="628" fill="#fbbf24" font-size="7" text-anchor="middle">⚠ pending: rotate ORCHESTRATOR_API_KEY  ·  ⚠ pending: SSH key to GitHub  ·  ⚠ pending: move 47GB ollama store</text>
+
+        <!-- =================================================================
+             LEGEND
+             ================================================================= -->
+
+        <text x="880" y="830" fill="white" font-size="10" font-weight="600">Legend</text>
+
+        <rect x="880" y="842" width="16" height="10" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="902" y="850" fill="#94a3b8" font-size="8">Frontend / MCP</text>
+
+        <rect x="880" y="858" width="16" height="10" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="902" y="866" fill="#94a3b8" font-size="8">Backend / Agent</text>
+
+        <rect x="880" y="874" width="16" height="10" rx="2" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="902" y="882" fill="#94a3b8" font-size="8">Cloud / GCP</text>
+
+        <rect x="880" y="890" width="16" height="10" rx="2" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="902" y="898" fill="#94a3b8" font-size="8">Database / Storage</text>
+
+        <rect x="990" y="842" width="16" height="10" rx="2" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1"/>
+        <text x="1012" y="850" fill="#94a3b8" font-size="8">Security / Recovery</text>
+
+        <rect x="990" y="858" width="16" height="10" rx="2" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1"/>
+        <text x="1012" y="866" fill="#94a3b8" font-size="8">Message Bus / Router</text>
+
+        <rect x="990" y="874" width="16" height="10" rx="2" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1"/>
+        <text x="1012" y="882" fill="#94a3b8" font-size="8">External Service</text>
+
+        <line x1="990" y1="893" x2="1006" y2="893" stroke="#fb7185" stroke-width="1" stroke-dasharray="3,3"/>
+        <text x="1012" y="896" fill="#94a3b8" font-size="8">Auth / Security Flow</text>
+
+        <text x="880" y="916" fill="#fbbf24" font-size="8">⚠ = pending item</text>
+        <text x="880" y="930" fill="#34d399" font-size="8">✓ = fixed / verified</text>
+      </svg>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="cards">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>Fixes Applied This Session</h3>
+        </div>
+        <ul>
+          <li class="fixed">✓ AGY SDK: dedicated venv at antigravity-sdk.../.venv</li>
+          <li class="fixed">✓ Protobuf upgraded to 7.35.1 (was 6.33.6)</li>
+          <li class="fixed">✓ agy-bridge launcher at ~/bin/agy-bridge</li>
+          <li class="fixed">✓ MCP gcp-cloudrun: 8 tools, connected</li>
+          <li class="fixed">✓ MCP gcp-bigquery: 5 tools, connected</li>
+          <li class="fixed">✓ Fence estimate tool .env created</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot amber"></div>
+          <h3>Pending (Requires User)</h3>
+        </div>
+        <ul>
+          <li class="pending">⚠ Rotate ORCHESTRATOR_API_KEY from "test-key"</li>
+          <li class="pending">⚠ SSH key id_208_aaw not registered on GitHub</li>
+          <li class="pending">⚠ Move 47GB ollama store (needs sudo)</li>
+          <li class="pending">⚠ Ensure VERTEXAI_PROJECT/LOCATION exported for Aider</li>
+          <li class="pending">⚠ Dual vertex_orchestrator clones (keep in sync)</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot cyan"></div>
+          <h3>MCP Tools Available (NEW)</h3>
+        </div>
+        <ul>
+          <li>• mcp_gcp-cloudrun_list_projects</li>
+          <li>• mcp_gcp-cloudrun_list_services</li>
+          <li>• mcp_gcp-cloudrun_deploy_local_folder</li>
+          <li>• mcp_gcp-cloudrun_deploy_container_image</li>
+          <li>• mcp_gcp-bigquery_run_bigquery_query</li>
+          <li>• mcp_gcp-bigquery_list_bigquery_tables</li>
+          <li>• mcp_gcp-bigquery_get_bigquery_table_schema</li>
+          <li>• Restart Hermes to activate these tools</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>Local Agent Mesh (WSL2)</h3>
+        </div>
+        <ul>
+          <li>• Hermes v0.20.1 — glm-5.2:cloud + MCP</li>
+          <li>• OpenClaw v2026.7.1 — gateway :18789</li>
+          <li>• ClawdBot — BTC recovery</li>
+          <li>• Aider v0.86.2 — Vertex AI primary</li>
+          <li>• OpenCode v0.0.55 — ollama provider</li>
+          <li>• AGY SDK v0.1.10 — fixed, separate venv</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot amber"></div>
+          <h3>Vertex AI / GCP Cloud</h3>
+        </div>
+        <ul>
+          <li>• vertex_orchestrator :8000 (31 tests)</li>
+          <li>• CrewAI → gemini-2.5-pro</li>
+          <li>• AutoGen → gemini-2.5-pro (litellm)</li>
+          <li>• Aider → vertex_ai/gemini-2.5-pro</li>
+          <li>• 14 GCP projects, 2 active</li>
+          <li>• ADC: admin@208fenceandgate.com</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot rose"></div>
+          <h3>Recovery Operation</h3>
+        </div>
+        <ul>
+          <li>• MasterRecovery3 cloned + patched</li>
+          <li>• Sanitization smoke test: PASS</li>
+          <li>• 6 tracks (A-F), ~$200K+ target</li>
+          <li>• BTC/LTC/DOGE/PPC across BIP44/49/84</li>
+          <li>• Seeds sanitized before AI calls</li>
+          <li>• AGY bridge: recovery_agent subagent</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- DR ARCHITECTURE + CLOUD RUN SERVICES + SECURITY FINDINGS          -->
+    <!-- ================================================================ -->
+
+    <div class="header" style="margin-top: 3rem;">
+      <div class="header-row">
+        <div class="pulse-dot" style="background: #fb7185;"></div>
+        <h1 style="font-size: 1.25rem;">Disaster Recovery & Cloud Run Services</h1>
+      </div>
+      <p class="subtitle">5 Cloud Run services across 3 regions · DR agent mapping · active security threats</p>
+    </div>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1200 620">
+        <defs>
+          <marker id="ah2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" /></marker>
+          <marker id="ah2-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee" /></marker>
+          <marker id="ah2-emerald" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#34d399" /></marker>
+          <marker id="ah2-rose" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185" /></marker>
+          <marker id="ah2-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb923c" /></marker>
+          <pattern id="grid2" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid2)" />
+
+        <!-- Control Plane boundary -->
+        <rect x="20" y="30" width="360" height="460" rx="12" fill="rgba(251, 146, 60, 0.03)" stroke="#fb923c" stroke-width="1" stroke-dasharray="8,4" opacity="0.4"/>
+        <text x="32" y="48" fill="#fb923c" font-size="10" font-weight="600" opacity="0.6">Control & Coordination Plane</text>
+
+        <!-- Execution Plane boundary -->
+        <rect x="400" y="30" width="380" height="460" rx="12" fill="rgba(34, 211, 238, 0.03)" stroke="#22d3ee" stroke-width="1" stroke-dasharray="8,4" opacity="0.4"/>
+        <text x="412" y="48" fill="#22d3ee" font-size="10" font-weight="600" opacity="0.6">Execution & Observation Plane</text>
+
+        <!-- Cloud Run boundary -->
+        <rect x="800" y="30" width="380" height="460" rx="12" fill="rgba(136, 19, 55, 0.03)" stroke="#fb7185" stroke-width="1" stroke-dasharray="8,4" opacity="0.4"/>
+        <text x="812" y="48" fill="#fb7185" font-size="10" font-weight="600" opacity="0.6">Cloud Run Services (Under Attack)</text>
+
+        <!-- Arrows -->
+        <line x1="200" y1="200" x2="470" y2="200" stroke="#fb923c" stroke-width="1.5" marker-end="url(#ah2-orange)"/>
+        <text x="335" y="195" fill="#94a3b8" font-size="8" text-anchor="middle">failover cmd</text>
+        <line x1="470" y1="180" x2="200" y2="180" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#ah2-cyan)"/>
+        <text x="335" y="175" fill="#94a3b8" font-size="8" text-anchor="middle">health signals</text>
+        <path d="M 620 250 L 800 110" fill="none" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah2-emerald)"/>
+        <text x="710" y="170" fill="#34d399" font-size="7">redeploy</text>
+        <path d="M 620 400 L 800 400" fill="none" stroke="#34d399" stroke-width="1.5" stroke-dasharray="5,5" marker-end="url(#ah2-emerald)"/>
+        <text x="710" y="395" fill="#34d399" font-size="7">verify</text>
+        <path d="M 960 470 L 960 520" fill="none" stroke="#fb7185" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#ah2-rose)"/>
+        <text x="970" y="500" fill="#fb7185" font-size="8" font-weight="600">P0 ALERT</text>
+
+        <!-- Control Plane -->
+        <rect x="30" y="140" width="180" height="80" rx="6" fill="#0f172a"/>
+        <rect x="30" y="140" width="180" height="80" rx="6" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1.5"/>
+        <text x="120" y="163" fill="white" font-size="11" font-weight="600" text-anchor="middle">Failover Orchestrator</text>
+        <text x="120" y="180" fill="#94a3b8" font-size="8" text-anchor="middle">Quorum + RAFT consensus</text>
+        <text x="120" y="194" fill="#94a3b8" font-size="8" text-anchor="middle">P1/P2/P3 trigger evaluation</text>
+        <text x="120" y="210" fill="#fb923c" font-size="7" text-anchor="middle">agent hub: orchestrator.py</text>
+
+        <rect x="30" y="260" width="180" height="80" rx="6" fill="#0f172a"/>
+        <rect x="30" y="260" width="180" height="80" rx="6" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1.5"/>
+        <text x="120" y="283" fill="white" font-size="11" font-weight="600" text-anchor="middle">State & Consensus</text>
+        <text x="120" y="300" fill="#94a3b8" font-size="8" text-anchor="middle">Cross-region config sync</text>
+        <text x="120" y="314" fill="#94a3b8" font-size="8" text-anchor="middle">Secrets · ConfigMaps · IAM</text>
+        <text x="120" y="330" fill="#a78bfa" font-size="7" text-anchor="middle">BigQuery: dr_state dataset</text>
+
+        <rect x="30" y="370" width="180" height="100" rx="6" fill="#0f172a"/>
+        <rect x="30" y="370" width="180" height="100" rx="6" fill="rgba(136, 19, 55, 0.2)" stroke="#fb7185" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="120" y="390" fill="white" font-size="10" font-weight="600" text-anchor="middle">Trigger Conditions</text>
+        <text x="120" y="408" fill="#fb7185" font-size="7" text-anchor="middle">P0: Path traversal success</text>
+        <text x="120" y="422" fill="#fb7185" font-size="7" text-anchor="middle">P1: Vertex AI region down</text>
+        <text x="120" y="436" fill="#fbbf24" font-size="7" text-anchor="middle">P2: Service stopped/attack</text>
+        <text x="120" y="450" fill="#34d399" font-size="7" text-anchor="middle">P3: Placeholder detected</text>
+        <text x="120" y="466" fill="#34d399" font-size="8" font-weight="600" text-anchor="middle">ALL 10 AGENTS HANDLED</text>
+
+        <!-- Execution Plane -->
+        <rect x="410" y="140" width="170" height="80" rx="6" fill="#0f172a"/>
+        <rect x="410" y="140" width="170" height="80" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="495" y="163" fill="white" font-size="11" font-weight="600" text-anchor="middle">Health Monitor</text>
+        <text x="495" y="180" fill="#94a3b8" font-size="8" text-anchor="middle">Polls /health endpoints</text>
+        <text x="495" y="194" fill="#94a3b8" font-size="8" text-anchor="middle">Vertex AI · Ollama · CR</text>
+        <text x="495" y="210" fill="#22d3ee" font-size="7" text-anchor="middle">dr_monitor.py (tested)</text>
+
+        <rect x="410" y="260" width="170" height="80" rx="6" fill="#0f172a"/>
+        <rect x="410" y="260" width="170" height="80" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="495" y="283" fill="white" font-size="11" font-weight="600" text-anchor="middle">Remediation Agent</text>
+        <text x="495" y="300" fill="#94a3b8" font-size="8" text-anchor="middle">Redeploy via MCP</text>
+        <text x="495" y="314" fill="#94a3b8" font-size="8" text-anchor="middle">Node fencing · DNS cutover</text>
+        <text x="495" y="330" fill="#34d399" font-size="7" text-anchor="middle">vertex_orchestrator /execute</text>
+
+        <rect x="410" y="380" width="170" height="80" rx="6" fill="#0f172a"/>
+        <rect x="410" y="380" width="170" height="80" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="495" y="403" fill="white" font-size="11" font-weight="600" text-anchor="middle">Post-Recovery Verify</text>
+        <text x="495" y="420" fill="#94a3b8" font-size="8" text-anchor="middle">Synthetic API tests</text>
+        <text x="495" y="434" fill="#94a3b8" font-size="8" text-anchor="middle">Data integrity checks</text>
+        <text x="495" y="450" fill="#34d399" font-size="7" text-anchor="middle">NEW: dr-verify agent</text>
+
+        <!-- Cloud Run Services -->
+        <rect x="810" y="60" width="200" height="60" rx="6" fill="#0f172a"/>
+        <rect x="810" y="60" width="200" height="60" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="910" y="82" fill="white" font-size="10" font-weight="600" text-anchor="middle">local-recovery</text>
+        <text x="910" y="97" fill="#94a3b8" font-size="8" text-anchor="middle">europe-west1 · auth required</text>
+        <text x="910" y="111" fill="#fbbf24" font-size="7" text-anchor="middle">⚠ PLACEHOLDER — Dockerfile created</text>
+
+        <rect x="810" y="170" width="200" height="60" rx="6" fill="#0f172a"/>
+        <rect x="810" y="170" width="200" height="60" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="910" y="192" fill="white" font-size="10" font-weight="600" text-anchor="middle">autonomous-agents-git</text>
+        <text x="910" y="207" fill="#94a3b8" font-size="8" text-anchor="middle">europe-west1 · auth required</text>
+        <text x="910" y="221" fill="#fbbf24" font-size="7" text-anchor="middle">⚠ PLACEHOLDER — wired to git-profiles</text>
+
+        <rect x="810" y="280" width="200" height="60" rx="6" fill="#0f172a"/>
+        <rect x="810" y="280" width="200" height="60" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="910" y="302" fill="white" font-size="10" font-weight="600" text-anchor="middle">vertex-enterprise-search</text>
+        <text x="910" y="317" fill="#94a3b8" font-size="8" text-anchor="middle">us-central1 · PUBLIC (404)</text>
+        <text x="910" y="331" fill="#fbbf24" font-size="7" text-anchor="middle">⚠ No routes — orphaned</text>
+
+        <rect x="810" y="390" width="200" height="60" rx="6" fill="#0f172a"/>
+        <rect x="810" y="390" width="200" height="60" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="910" y="412" fill="white" font-size="10" font-weight="600" text-anchor="middle">enterprise-app</text>
+        <text x="910" y="427" fill="#94a3b8" font-size="8" text-anchor="middle">us-central1 · STOPPED</text>
+        <text x="910" y="441" fill="#94a3b8" font-size="7" text-anchor="middle">deployer: jaylang085@gmail.com</text>
+
+        <rect x="810" y="500" width="200" height="60" rx="6" fill="#0f172a"/>
+        <rect x="810" y="500" width="200" height="60" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="2"/>
+        <text x="910" y="522" fill="white" font-size="10" font-weight="600" text-anchor="middle">klarity</text>
+        <text x="910" y="537" fill="#fb7185" font-size="8" text-anchor="middle">us-east1 · PUBLIC · VULNERABLE</text>
+        <text x="910" y="551" fill="#fb7185" font-size="7" text-anchor="middle">⚠ SERVING /etc/passwd — P0</text>
+
+        <!-- BigQuery -->
+        <rect x="410" y="500" width="170" height="60" rx="6" fill="#0f172a"/>
+        <rect x="410" y="500" width="170" height="60" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="495" y="522" fill="white" font-size="10" font-weight="600" text-anchor="middle">BigQuery</text>
+        <text x="495" y="537" fill="#94a3b8" font-size="8" text-anchor="middle">dr_state (4 tables) + recovery_logs</text>
+        <text x="495" y="551" fill="#a78bfa" font-size="7" text-anchor="middle">✓ 13 alerts, 8 scanner events, 7 remediation actions</text>
+
+        <!-- Failover flow bar -->
+        <rect x="20" y="570" width="1160" height="40" rx="6" fill="#0f172a"/>
+        <rect x="20" y="570" width="1160" height="40" rx="6" fill="rgba(6, 78, 59, 0.2)" stroke="#34d399" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="600" y="588" fill="#34d399" font-size="9" font-weight="600" text-anchor="middle">Failover: Phase 1 (Isolate) → Phase 2 (Bootstrap) → Phase 3 (Restore) → Phase 4 (Deploy) → Phase 5 (Cutover)</text>
+        <text x="600" y="602" fill="#94a3b8" font-size="7" text-anchor="middle">DR Monitor detects → Orchestrator decides → Remediation executes → Verify validates → Traffic cutover</text>
+      </svg>
+    </div>
+
+    <!-- DR + Security Cards -->
+    <div class="cards" style="margin-top: 2rem;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot rose"></div>
+          <h3>P0 Security Alert — klarity</h3>
+        </div>
+        <ul>
+          <li style="color:#fb7185">⚠ PUBLIC + VULNERABLE — serving /etc/passwd</li>
+          <li>• TsunamiSecurityScanner got HTTP 200 on /etc/passwd</li>
+          <li>• Path traversal on Grafana plugin paths (HTTP 200)</li>
+          <li>• Deployed by conor@208fenceandgate.com</li>
+          <li>• Region: us-east1 | URL: klarity-554ix7cbwq-ue.a.run.app</li>
+          <li>• FIX: gcloud run services update klarity --no-allow-unauthenticated</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot amber"></div>
+          <h3>Active Attacks (All Services)</h3>
+        </div>
+        <ul>
+          <li>• Apache Commons IO RCE (TSUNAMI_PAYLOAD)</li>
+          <li>• WebLogic ShellSession deserialization</li>
+          <li>• Grafana plugin path traversal (20+ paths)</li>
+          <li>• /etc/passwd path traversal attempts</li>
+          <li>• Scanner: TsunamiSecurityScanner</li>
+          <li>• Source: 169.254.169.126 (metadata IP)</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot orange"></div>
+          <h3>DR Agents → Agent Hub</h3>
+        </div>
+        <ul>
+          <li>• Health Monitor → dr_monitor.py (tested)</li>
+          <li>• Failover Orchestrator → orchestrator.py</li>
+          <li>• Remediation → vertex-orchestration</li>
+          <li>• State Sync → BigQuery dr_state</li>
+          <li>• Post-Recovery Verify → dr-verify (pending)</li>
+          <li>• Design doc: DR-CLOUDRUN-WIRING-DESIGN.md</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot violet"></div>
+          <h3>BigQuery (NEW — in GCP)</h3>
+        </div>
+        <ul>
+          <li>• Dataset: dr_state → 4 tables (alerts, service_inventory, remediation_actions, agent_mapping)</li>
+          <li>• Dataset: recovery_logs → scanner_events (8 rows)</li>
+          <li>• 13 alerts + 7 remediation actions + 6 agent mappings</li>
+          <li>• Queryable by AGY gcloud_ops_agent + dr_coordinator</li>
+          <li>• All findings inherited by enterprise agents</li>
+          <li>• MCP: 5 BigQuery tools available to Hermes</li>
+          <li>• MCP: 8 Cloud Run tools available to Hermes</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot cyan"></div>
+          <h3>Cloud Run Wiring</h3>
+        </div>
+        <ul>
+          <li>• local-recovery: Dockerfile + cloud_run_server.py created</li>
+          <li>• autonomous-agents-git: wired to git-profiles handler</li>
+          <li>• vertex-enterprise-search: orphaned (tear down?)</li>
+          <li>• enterprise-app: stopped (investigate?)</li>
+          <li>• klarity: P0 — secure or tear down immediately</li>
+          <li>• plugin.json: fixed bigquery-mcp package reference</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>Failover Sequence</h3>
+        </div>
+        <ul>
+          <li>1. Isolate & Fence (kill ingress, lock storage)</li>
+          <li>2. Bootstrap target infra (scale nodes, IAM)</li>
+          <li>3. Restore state (BigQuery + volume snapshots)</li>
+          <li>4. Deploy via GitOps (ArgoCD/Flux)</li>
+          <li>5. Traffic cutover (DNS/GSLB/BGP)</li>
+          <li>Post: Verify integrity + synthetic tests + SLA</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- FALLBACK MODEL ARCHITECTURE + SUBAGENT RESULTS                   -->
+    <!-- ================================================================ -->
+
+    <div class="header" style="margin-top: 3rem;">
+      <div class="header-row">
+        <div class="pulse-dot" style="background: #34d399;"></div>
+        <h1 style="font-size: 1.25rem;">3-Layer Fallback Architecture + Subagent Results</h1>
+      </div>
+      <p class="subtitle">6 subagents · 3 fallback layers · 78+ tests · token budget tracking · ollama-only mode</p>
+    </div>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1200 560">
+        <defs>
+          <marker id="ah3" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" /></marker>
+          <marker id="ah3-emerald" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#34d399" /></marker>
+          <marker id="ah3-amber" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24" /></marker>
+          <marker id="ah3-rose" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185" /></marker>
+          <marker id="ah3-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee" /></marker>
+          <pattern id="grid3" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid3)" />
+
+        <!-- Fallback chain arrows (drawn first, behind boxes) -->
+        <!-- Layer 1 → Layer 2 -->
+        <line x1="340" y1="130" x2="580" y2="130" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah3-emerald)"/>
+        <text x="460" y="125" fill="#94a3b8" font-size="8" text-anchor="middle">fallback</text>
+        <!-- Layer 2 → Layer 3 -->
+        <line x1="620" y1="130" x2="860" y2="130" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah3-emerald)"/>
+        <text x="740" y="125" fill="#94a3b8" font-size="8" text-anchor="middle">fallback</text>
+        <!-- Layer 3 → Ollama -->
+        <line x1="970" y1="130" x2="1080" y2="130" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah3-emerald)"/>
+        <text x="1025" y="125" fill="#94a3b8" font-size="8" text-anchor="middle">local</text>
+        <!-- Failure detection (rose, upward) -->
+        <path d="M 200 160 L 200 70 L 460 70 L 460 100" fill="none" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="5,5" marker-end="url(#ah3-rose)"/>
+        <text x="330" y="65" fill="#fb7185" font-size="8" text-anchor="middle">quota / rate-limit / timeout detected</text>
+
+        <!-- ================================================================ -->
+        <!-- LAYER 1: Agent Hub Fallback -->
+        <rect x="50" y="100" width="290" height="200" rx="8" fill="rgba(251, 146, 60, 0.03)" stroke="#fb923c" stroke-width="1" stroke-dasharray="4,4" opacity="0.4"/>
+        <text x="60" y="118" fill="#fb923c" font-size="9" font-weight="600" opacity="0.6">Layer 1: Agent Hub Fallback</text>
+
+        <rect x="60" y="130" width="270" height="50" rx="6" fill="#0f172a"/>
+        <rect x="60" y="130" width="270" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="195" y="150" fill="white" font-size="10" font-weight="600" text-anchor="middle">_try_vertex_with_ollama_fallback()</text>
+        <text x="195" y="166" fill="#94a3b8" font-size="8" text-anchor="middle">live_handlers.py · _is_cloud_failure()</text>
+
+        <rect x="60" y="190" width="130" height="40" rx="6" fill="#0f172a"/>
+        <rect x="60" y="190" width="130" height="40" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="125" y="207" fill="white" font-size="9" font-weight="600" text-anchor="middle">_check_token_budget()</text>
+        <text x="125" y="220" fill="#34d399" font-size="7" text-anchor="middle">90% of 120k cap → switch</text>
+
+        <rect x="200" y="190" width="130" height="40" rx="6" fill="#0f172a"/>
+        <rect x="200" y="190" width="130" height="40" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="265" y="207" fill="white" font-size="9" font-weight="600" text-anchor="middle">_pick_model()</text>
+        <text x="265" y="220" fill="#34d399" font-size="7" text-anchor="middle">prefer_local=True</text>
+
+        <rect x="60" y="240" width="270" height="50" rx="6" fill="#0f172a"/>
+        <rect x="60" y="240" width="270" height="50" rx="6" fill="rgba(251, 146, 60, 0.2)" stroke="#fb923c" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="195" y="258" fill="white" font-size="9" font-weight="600" text-anchor="middle">Handlers updated: dr-agent, vertex-orch</text>
+        <text x="195" y="272" fill="#94a3b8" font-size="8" text-anchor="middle">hermes, ollama-router</text>
+        <text x="195" y="284" fill="#34d399" font-size="7" text-anchor="middle">✓ test: gemma4:latest → "Hello there!"</text>
+
+        <!-- ================================================================ -->
+        <!-- LAYER 2: AGY Bridge Fallback -->
+        <rect x="370" y="100" width="290" height="200" rx="8" fill="rgba(34, 211, 238, 0.03)" stroke="#22d3ee" stroke-width="1" stroke-dasharray="4,4" opacity="0.4"/>
+        <text x="380" y="118" fill="#22d3ee" font-size="9" font-weight="600" opacity="0.6">Layer 2: AGY Bridge Fallback</text>
+
+        <rect x="380" y="130" width="270" height="50" rx="6" fill="#0f172a"/>
+        <rect x="380" y="130" width="270" height="50" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="515" y="150" fill="white" font-size="10" font-weight="600" text-anchor="middle">try_vertex_with_ollama_fallback()</text>
+        <text x="515" y="166" fill="#94a3b8" font-size="8" text-anchor="middle">wraps Agent context manager</text>
+
+        <rect x="380" y="190" width="130" height="40" rx="6" fill="#0f172a"/>
+        <rect x="380" y="190" width="130" height="40" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="445" y="207" fill="white" font-size="9" font-weight="600" text-anchor="middle">pick_ollama_model()</text>
+        <text x="445" y="220" fill="#22d3ee" font-size="7" text-anchor="middle">5 task types mapped</text>
+
+        <rect x="520" y="190" width="130" height="40" rx="6" fill="#0f172a"/>
+        <rect x="520" y="190" width="130" height="40" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="585" y="207" fill="white" font-size="9" font-weight="600" text-anchor="middle">call_ollama_direct()</text>
+        <text x="585" y="220" fill="#22d3ee" font-size="7" text-anchor="middle">OpenAI API :11434/v1</text>
+
+        <rect x="380" y="240" width="270" height="50" rx="6" fill="#0f172a"/>
+        <rect x="380" y="240" width="270" height="50" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="515" y="258" fill="white" font-size="9" font-weight="600" text-anchor="middle">Flags: --ollama-only --mock-vertex-failure</text>
+        <text x="515" y="272" fill="#94a3b8" font-size="8" text-anchor="middle">4 subagents: recovery, gcloud, dr_coord, security</text>
+        <text x="515" y="284" fill="#34d399" font-size="7" text-anchor="middle">✓ both modes tested against live ollama</text>
+
+        <!-- ================================================================ -->
+        <!-- LAYER 3: vertex_orchestrator Server Fallback -->
+        <rect x="690" y="100" width="290" height="200" rx="8" fill="rgba(6, 78, 59, 0.03)" stroke="#34d399" stroke-width="1" stroke-dasharray="4,4" opacity="0.4"/>
+        <text x="700" y="118" fill="#34d399" font-size="9" font-weight="600" opacity="0.6">Layer 3: vertex_orchestrator Fallback</text>
+
+        <rect x="700" y="130" width="270" height="50" rx="6" fill="#0f172a"/>
+        <rect x="700" y="130" width="270" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="835" y="150" fill="white" font-size="10" font-weight="600" text-anchor="middle">OllamaConfig + OllamaRunner</text>
+        <text x="835" y="166" fill="#94a3b8" font-size="8" text-anchor="middle">config.py + ollama_runner.py (new)</text>
+
+        <rect x="700" y="190" width="130" height="40" rx="6" fill="#0f172a"/>
+        <rect x="700" y="190" width="130" height="40" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="765" y="207" fill="white" font-size="9" font-weight="600" text-anchor="middle">catches 4 errors</text>
+        <text x="765" y="220" fill="#34d399" font-size="7" text-anchor="middle">ResourceExhausted etc</text>
+
+        <rect x="840" y="190" width="130" height="40" rx="6" fill="#0f172a"/>
+        <rect x="840" y="190" width="130" height="40" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="905" y="207" fill="white" font-size="9" font-weight="600" text-anchor="middle">litellm → ollama</text>
+        <text x="905" y="220" fill="#34d399" font-size="7" text-anchor="middle">api_base :11434</text>
+
+        <rect x="700" y="240" width="270" height="50" rx="6" fill="#0f172a"/>
+        <rect x="700" y="240" width="270" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="835" y="258" fill="white" font-size="9" font-weight="600" text-anchor="middle">/fallback/status + /health updated</text>
+        <text x="835" y="272" fill="#94a3b8" font-size="8" text-anchor="middle">fallback_used + fallback_error in result</text>
+        <text x="835" y="284" fill="#34d399" font-size="7" text-anchor="middle">✓ 78 tests pass (31 orig + 47 new) 0.47s</text>
+
+        <!-- ================================================================ -->
+        <!-- Ollama models (right) -->
+        <rect x="1010" y="100" width="170" height="200" rx="8" fill="rgba(6, 78, 59, 0.03)" stroke="#34d399" stroke-width="1" stroke-dasharray="4,4" opacity="0.3"/>
+        <text x="1020" y="118" fill="#34d399" font-size="9" font-weight="600" opacity="0.5">Ollama 127.0.0.1:11434</text>
+
+        <rect x="1020" y="130" width="150" height="28" rx="4" fill="#0f172a"/>
+        <rect x="1020" y="130" width="150" height="28" rx="4" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="1095" y="148" fill="white" font-size="9" font-weight="600" text-anchor="middle">glm-5.2:cloud (756B)</text>
+
+        <rect x="1020" y="164" width="150" height="28" rx="4" fill="#0f172a"/>
+        <rect x="1020" y="164" width="150" height="28" rx="4" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="1095" y="182" fill="white" font-size="9" font-weight="600" text-anchor="middle">gemma4:31b (19GB local)</text>
+
+        <rect x="1020" y="198" width="150" height="28" rx="4" fill="#0f172a"/>
+        <rect x="1020" y="198" width="150" height="28" rx="4" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="1095" y="216" fill="white" font-size="9" font-weight="600" text-anchor="middle">kimi-k3:cloud (1M ctx)</text>
+
+        <rect x="1020" y="232" width="150" height="28" rx="4" fill="#0f172a"/>
+        <rect x="1020" y="232" width="150" height="28" rx="4" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="1095" y="250" fill="white" font-size="9" font-weight="600" text-anchor="middle">gemma4:26b (17GB local)</text>
+
+        <rect x="1020" y="266" width="150" height="28" rx="4" fill="#0f172a"/>
+        <rect x="1020" y="266" width="150" height="28" rx="4" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="1095" y="284" fill="white" font-size="9" font-weight="600" text-anchor="middle">gemma4:latest (9.6GB local)</text>
+
+        <!-- ================================================================ -->
+        <!-- fwd-think + integration results (bottom) -->
+        <rect x="50" y="330" width="560" height="100" rx="6" fill="#0f172a"/>
+        <rect x="50" y="330" width="560" height="100" rx="6" fill="rgba(6, 78, 59, 0.2)" stroke="#34d399" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="330" y="350" fill="#34d399" font-size="10" font-weight="600" text-anchor="middle">fwd-think: propose · debate · loop · status</text>
+        <text x="330" y="368" fill="#94a3b8" font-size="8" text-anchor="middle">CLI: fwd-think {propose,debate,loop,status} · default mode auto</text>
+        <text x="330" y="382" fill="#94a3b8" font-size="8" text-anchor="middle">8 pytest pass, 1 skipped (live-LLM) · 4 candidates + 4 counters end-to-end</text>
+        <text x="330" y="396" fill="#94a3b8" font-size="8" text-anchor="middle">default model=auto (ollama primary, vertex fallback)</text>
+        <text x="330" y="410" fill="#34d399" font-size="7" text-anchor="middle">✓ Plan.summary + Debate.overall_stance bumped to 2000 chars (glm-5.2:cloud > 400 chars)</text>
+        <text x="330" y="422" fill="#34d399" font-size="7" text-anchor="middle">✓ clients.status() refreshes ADC before checking (was reporting "no-cred")</text>
+
+        <!-- Integration suite results -->
+        <rect x="630" y="330" width="280" height="100" rx="6" fill="#0f172a"/>
+        <rect x="630" y="330" width="280" height="100" rx="6" fill="rgba(6, 78, 59, 0.2)" stroke="#34d399" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="770" y="350" fill="#34d399" font-size="10" font-weight="600" text-anchor="middle">Integration Suite: 34 pass · 1 warn · 0 fail</text>
+        <text x="770" y="368" fill="#94a3b8" font-size="8" text-anchor="middle">was 28/1/0 before this session</text>
+        <text x="770" y="382" fill="#94a3b8" font-size="8" text-anchor="middle">warn: SSH key pre-existing (not Vertex)</text>
+        <text x="770" y="396" fill="#34d399" font-size="7" text-anchor="middle">✓ AGENT-WIRING.md updated</text>
+        <text x="770" y="410" fill="#34d399" font-size="7" text-anchor="middle">✓ Checkpoint 004-fwd-thinker-shipped.md</text>
+        <text x="770" y="422" fill="#94a3b8" font-size="7" text-anchor="middle">design: standalone repo · revision step = no-op stub</text>
+
+        <!-- Subagent scorecard -->
+        <rect x="930" y="330" width="250" height="100" rx="6" fill="#0f172a"/>
+        <rect x="930" y="330" width="250" height="100" rx="6" fill="rgba(251, 146, 60, 0.2)" stroke="#fb923c" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="1055" y="350" fill="#fb923c" font-size="10" font-weight="600" text-anchor="middle">6 Subagents · 2 Rounds</text>
+        <text x="1055" y="368" fill="#94a3b8" font-size="8" text-anchor="middle">R1: DR handler + deployment + AGY bridge</text>
+        <text x="1055" y="382" fill="#94a3b8" font-size="8" text-anchor="middle">R2: Hub fallback + AGY fallback + VO fallback</text>
+        <text x="1055" y="396" fill="#34d399" font-size="7" text-anchor="middle">✓ 78+ tests pass · all fallback layers verified</text>
+        <text x="1055" y="410" fill="#34d399" font-size="7" text-anchor="middle">✓ BigQuery: 5 tables, 39 rows total</text>
+        <text x="1055" y="422" fill="#fbbf24" font-size="7" text-anchor="middle">⚠ pending: secure klarity (P0)</text>
+
+        <!-- Token budget bar -->
+        <rect x="50" y="450" width="1130" height="40" rx="6" fill="#0f172a"/>
+        <rect x="50" y="450" width="1130" height="40" rx="6" fill="rgba(8, 51, 68, 0.2)" stroke="#22d3ee" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="615" y="468" fill="#22d3ee" font-size="9" font-weight="600" text-anchor="middle">Token Budget: _check_token_budget() tracks per-agent usage · proactive switch at 90% of 120k cap · _reset_token_budget() helper</text>
+        <text x="615" y="482" fill="#94a3b8" font-size="7" text-anchor="middle">cloud failure detection: _is_cloud_failure() → quota · rate-limit · timeout · ResourceExhausted · DeadlineExceeded · ServiceUnavailable · PermissionDenied</text>
+
+        <!-- Legend -->
+        <text x="50" y="515" fill="white" font-size="9" font-weight="600">Legend</text>
+        <rect x="110" y="505" width="12" height="10" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="128" y="514" fill="#94a3b8" font-size="8">Fallback / Verified</text>
+        <rect x="240" y="505" width="12" height="10" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="258" y="514" fill="#94a3b8" font-size="8">AGY / Monitor</text>
+        <rect x="360" y="505" width="12" height="10" rx="2" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="378" y="514" fill="#94a3b8" font-size="8">Cloud Model</text>
+        <line x1="460" y1="510" x2="478" y2="510" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <text x="484" y="514" fill="#94a3b8" font-size="8">Failure Detection</text>
+        <line x1="600" y1="510" x2="618" y2="510" stroke="#34d399" stroke-width="1.5"/>
+        <text x="624" y="514" fill="#94a3b8" font-size="8">Fallback Path</text>
+        <text x="730" y="514" fill="#fbbf24" font-size="8">⚠ = pending</text>
+        <text x="830" y="514" fill="#34d399" font-size="8">✓ = verified/tested</text>
+      </svg>
+    </div>
+
+    <!-- Fallback + fwd-think Cards -->
+    <div class="cards" style="margin-top: 2rem;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>Layer 1: Agent Hub Fallback</h3>
+        </div>
+        <ul>
+          <li>• _try_vertex_with_ollama_fallback() utility</li>
+          <li>• _check_token_budget() — 90% of 120k cap</li>
+          <li>• _is_cloud_failure() — quota/timeout/rate-limit</li>
+          <li>• dr-agent, vertex-orch, hermes, ollama-router</li>
+          <li>• ollama-router: prefer_local=True on cloud fail</li>
+          <li style="color:#34d399">✓ test: gemma4:latest → "Hello there!"</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot cyan"></div>
+          <h3>Layer 2: AGY Bridge Fallback</h3>
+        </div>
+        <ul>
+          <li>• try_vertex_with_ollama_fallback() wrapper</li>
+          <li>• pick_ollama_model() — 5 task types mapped</li>
+          <li>• call_ollama_direct() — OpenAI API :11434/v1</li>
+          <li>• --ollama-only flag (force local mode)</li>
+          <li>• --mock-vertex-failure flag (test fallback)</li>
+          <li style="color:#34d399">✓ both modes tested live</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>Layer 3: vertex_orchestrator</h3>
+        </div>
+        <ul>
+          <li>• OllamaConfig + OllamaRunner (new file)</li>
+          <li>• Catches: ResourceExhausted, ServiceUnavailable</li>
+          <li>• DeadlineExceeded, PermissionDenied</li>
+          <li>• /fallback/status endpoint (live)</li>
+          <li>• /health includes fallback status</li>
+          <li style="color:#34d399">✓ 78 tests pass (31 orig + 47 new)</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot amber"></div>
+          <h3>fwd-think Tool</h3>
+        </div>
+        <ul>
+          <li>• CLI: fwd-think {propose,debate,loop,status}</li>
+          <li>• 8 pytest pass, 1 skipped (live-LLM)</li>
+          <li>• 4 candidates + 4 counters end-to-end</li>
+          <li>• default=auto (ollama primary, vertex fallback)</li>
+          <li>• Plan.summary bumped to 2000 chars</li>
+          <li>• clients.status() now refreshes ADC</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot violet"></div>
+          <h3>Integration Suite</h3>
+        </div>
+        <ul>
+          <li>• 34 pass · 1 warn · 0 fail (was 28/1/0)</li>
+          <li>• warn: SSH key pre-existing</li>
+          <li>• AGENT-WIRING.md updated</li>
+          <li>• Checkpoint 004-fwd-thinker-shipped.md</li>
+          <li>• Design: standalone repo, auto model</li>
+          <li>• Revision step = no-op stub (for now)</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot orange"></div>
+          <h3>Subagent Scorecard</h3>
+        </div>
+        <ul>
+          <li>• R1: DR handler (scan/monitor/remediate/verify)</li>
+          <li>• R1: DR deployment (8 files in dr-deployment/)</li>
+          <li>• R1: AGY bridge (4 subagents + 2 tools)</li>
+          <li>• R2: Hub fallback (token budget + routing)</li>
+          <li>• R2: AGY fallback (ollama-only + mock fail)</li>
+          <li>• R2: VO fallback (OllamaRunner + 47 tests)</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ================================================================ -->
+
+    <div class="header" style="margin-top: 3rem;">
+      <div class="header-row">
+        <div class="pulse-dot" style="background: #fb923c;"></div>
+        <h1 style="font-size: 1.25rem;">Agent Hub — 10 Agents · Handler Status Ledger</h1>
+      </div>
+      <p class="subtitle">Real handler audit: 8 LIVE / 2 STUB · message types · last test result · 139 SKILL.md · 7.4 MB hub</p>
+    </div>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1200 700">
+        <defs>
+          <pattern id="grid4" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+
+        <!-- Background Grid -->
+        <rect width="100%" height="100%" fill="url(#grid4)" />
+
+        <!-- Section title bar -->
+        <rect x="50" y="15" width="1100" height="35" rx="6" fill="#0f172a"/>
+        <rect x="50" y="15" width="1100" height="35" rx="6" fill="rgba(251, 146, 60, 0.15)" stroke="#fb923c" stroke-width="1"/>
+        <text x="600" y="37" fill="#fb923c" font-size="11" font-weight="700" text-anchor="middle">CROSS-AGENT BUS — 10 HANDLERS AUDITED</text>
+
+        <!-- ================================================================
+             AGENT CARDS — 5 columns × 2 rows
+             Card: 210w × 280h, gap 20px, start x=50, y=65
+             ================================================================ -->
+
+        <!-- Row 1 -->
+
+        <!-- 1. compliance-legal (STUB) -->
+        <rect x="50" y="65" width="210" height="280" rx="8" fill="#0f172a"/>
+        <rect x="50" y="65" width="210" height="280" rx="8" fill="rgba(120, 53, 15, 0.2)" stroke="#fbbf24" stroke-width="1" opacity="0.6"/>
+        <rect x="50" y="65" width="210" height="4" rx="2" fill="#fbbf24"/>
+        <text x="155" y="88" fill="white" font-size="11" font-weight="700" text-anchor="middle">compliance-legal</text>
+        <rect x="180" y="96" width="60" height="16" rx="3" fill="rgba(120, 53, 15, 0.4)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="210" y="107" fill="#fbbf24" font-size="8" font-weight="700" text-anchor="middle">STUB</text>
+        <text x="60" y="130" fill="#94a3b8" font-size="8">Handler:</text>
+        <text x="60" y="143" fill="#cbd5e1" font-size="8">stub-IaC (placeholder)</text>
+        <text x="60" y="163" fill="#94a3b8" font-size="8">Msg types:</text>
+        <text x="60" y="176" fill="#cbd5e1" font-size="8">compliance_request</text>
+        <text x="60" y="186" fill="#cbd5e1" font-size="8">iac_validate</text>
+        <text x="60" y="206" fill="#94a3b8" font-size="8">Last test:</text>
+        <text x="60" y="219" fill="#fbbf24" font-size="8">⚠ pending — IaC</text>
+        <text x="60" y="231" fill="#fbbf24" font-size="8">  not wired</text>
+        <text x="60" y="255" fill="#64748b" font-size="7">SKILL.md: 18 files</text>
+        <text x="60" y="268" fill="#64748b" font-size="7">IaC stub returns</text>
+        <text x="60" y="280" fill="#64748b" font-size="7">  "not implemented"</text>
+        <text x="60" y="305" fill="#fbbf24" font-size="7">⚠ prune candidate</text>
+        <text x="60" y="325" fill="#475569" font-size="7">keep if IaC lands</text>
+
+        <!-- 2. gdpr-compliance (LIVE) -->
+        <rect x="280" y="65" width="210" height="280" rx="8" fill="#0f172a"/>
+        <rect x="280" y="65" width="210" height="280" rx="8" fill="rgba(6, 78, 59, 0.15)" stroke="#34d399" stroke-width="1" opacity="0.6"/>
+        <rect x="280" y="65" width="210" height="4" rx="2" fill="#34d399"/>
+        <text x="385" y="88" fill="white" font-size="11" font-weight="700" text-anchor="middle">gdpr-compliance</text>
+        <rect x="410" y="96" width="60" height="16" rx="3" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="440" y="107" fill="#34d399" font-size="8" font-weight="700" text-anchor="middle">LIVE</text>
+        <text x="290" y="130" fill="#94a3b8" font-size="8">Handler:</text>
+        <text x="290" y="143" fill="#cbd5e1" font-size="8">runs GDPR scripts</text>
+        <text x="290" y="163" fill="#94a3b8" font-size="8">Msg types:</text>
+        <text x="290" y="176" fill="#cbd5e1" font-size="8">gdpr_scan</text>
+        <text x="290" y="186" fill="#cbd5e1" font-size="8">data_audit</text>
+        <text x="290" y="206" fill="#94a3b8" font-size="8">Last test:</text>
+        <text x="290" y="219" fill="#34d399" font-size="8">✓ scripts execute</text>
+        <text x="290" y="231" fill="#34d399" font-size="8">  end-to-end</text>
+        <text x="290" y="255" fill="#64748b" font-size="7">SKILL.md: 22 files</text>
+        <text x="290" y="268" fill="#64748b" font-size="7">python subprocess</text>
+        <text x="290" y="280" fill="#64748b" font-size="7">  to gdpr tools</text>
+        <text x="290" y="305" fill="#34d399" font-size="7">✓ keep — active</text>
+        <text x="290" y="325" fill="#475569" font-size="7">core compliance</text>
+
+        <!-- 3. drive-layout (LIVE) -->
+        <rect x="510" y="65" width="210" height="280" rx="8" fill="#0f172a"/>
+        <rect x="510" y="65" width="210" height="280" rx="8" fill="rgba(6, 78, 59, 0.15)" stroke="#34d399" stroke-width="1" opacity="0.6"/>
+        <rect x="510" y="65" width="210" height="4" rx="2" fill="#34d399"/>
+        <text x="615" y="88" fill="white" font-size="11" font-weight="700" text-anchor="middle">drive-layout</text>
+        <rect x="640" y="96" width="60" height="16" rx="3" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="670" y="107" fill="#34d399" font-size="8" font-weight="700" text-anchor="middle">LIVE</text>
+        <text x="520" y="130" fill="#94a3b8" font-size="8">Handler:</text>
+        <text x="520" y="143" fill="#cbd5e1" font-size="8">reads MD files</text>
+        <text x="520" y="163" fill="#94a3b8" font-size="8">Msg types:</text>
+        <text x="520" y="176" fill="#cbd5e1" font-size="8">layout_request</text>
+        <text x="520" y="186" fill="#cbd5e1" font-size="8">drive_scan</text>
+        <text x="520" y="206" fill="#94a3b8" font-size="8">Last test:</text>
+        <text x="520" y="219" fill="#34d399" font-size="8">✓ MD parsed</text>
+        <text x="520" y="231" fill="#34d399" font-size="8">  layouts returned</text>
+        <text x="520" y="255" fill="#64748b" font-size="7">SKILL.md: 15 files</text>
+        <text x="520" y="268" fill="#64748b" font-size="7">filesystem reader</text>
+        <text x="520" y="280" fill="#64748b" font-size="7">  markdown parser</text>
+        <text x="520" y="305" fill="#34d399" font-size="7">✓ keep — active</text>
+        <text x="520" y="325" fill="#475569" font-size="7">drive layout tool</text>
+
+        <!-- 4. vertex-orchestration (LIVE) -->
+        <rect x="740" y="65" width="210" height="280" rx="8" fill="#0f172a"/>
+        <rect x="740" y="65" width="210" height="280" rx="8" fill="rgba(6, 78, 59, 0.15)" stroke="#34d399" stroke-width="1" opacity="0.6"/>
+        <rect x="740" y="65" width="210" height="4" rx="2" fill="#34d399"/>
+        <text x="845" y="88" fill="white" font-size="11" font-weight="700" text-anchor="middle">vertex-orchestration</text>
+        <rect x="870" y="96" width="60" height="16" rx="3" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="900" y="107" fill="#34d399" font-size="8" font-weight="700" text-anchor="middle">LIVE</text>
+        <text x="750" y="130" fill="#94a3b8" font-size="8">Handler:</text>
+        <text x="750" y="143" fill="#cbd5e1" font-size="8">vertex + fallback</text>
+        <text x="750" y="163" fill="#94a3b8" font-size="8">Msg types:</text>
+        <text x="750" y="176" fill="#cbd5e1" font-size="8">vertex_request</text>
+        <text x="750" y="186" fill="#cbd5e1" font-size="8">crewai_dispatch</text>
+        <text x="750" y="206" fill="#94a3b8" font-size="8">Last test:</text>
+        <text x="750" y="219" fill="#34d399" font-size="8">✓ fallback tested</text>
+        <text x="750" y="231" fill="#34d399" font-size="8">  78 tests pass</text>
+        <text x="750" y="255" fill="#64748b" font-size="7">SKILL.md: 12 files</text>
+        <text x="750" y="268" fill="#64748b" font-size="7">OllamaConfig +</text>
+        <text x="750" y="280" fill="#64748b" font-size="7">  OllamaRunner</text>
+        <text x="750" y="305" fill="#34d399" font-size="7">✓ keep — core</text>
+        <text x="750" y="325" fill="#475569" font-size="7">31+47 tests</text>
+
+        <!-- 5. git-profiles (LIVE) -->
+        <rect x="970" y="65" width="210" height="280" rx="8" fill="#0f172a"/>
+        <rect x="970" y="65" width="210" height="280" rx="8" fill="rgba(6, 78, 59, 0.15)" stroke="#34d399" stroke-width="1" opacity="0.6"/>
+        <rect x="970" y="65" width="210" height="4" rx="2" fill="#34d399"/>
+        <text x="1075" y="88" fill="white" font-size="11" font-weight="700" text-anchor="middle">git-profiles</text>
+        <rect x="1100" y="96" width="60" height="16" rx="3" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="1130" y="107" fill="#34d399" font-size="8" font-weight="700" text-anchor="middle">LIVE</text>
+        <text x="980" y="130" fill="#94a3b8" font-size="8">Handler:</text>
+        <text x="980" y="143" fill="#cbd5e1" font-size="8">runs git_profiles.py</text>
+        <text x="980" y="163" fill="#94a3b8" font-size="8">Msg types:</text>
+        <text x="980" y="176" fill="#cbd5e1" font-size="8">git_profile_switch</text>
+        <text x="980" y="186" fill="#cbd5e1" font-size="8">repo_config</text>
+        <text x="980" y="206" fill="#94a3b8" font-size="8">Last test:</text>
+        <text x="980" y="219" fill="#34d399" font-size="8">✓ profile switch</text>
+        <text x="980" y="231" fill="#34d399" font-size="8">  verified</text>
+        <text x="980" y="255" fill="#64748b" font-size="7">SKILL.md: 9 files</text>
+        <text x="980" y="268" fill="#64748b" font-size="7">python script</text>
+        <text x="980" y="280" fill="#64748b" font-size="7">  exec subprocess</text>
+        <text x="980" y="305" fill="#34d399" font-size="7">✓ keep — active</text>
+        <text x="980" y="325" fill="#475569" font-size="7">git identity mgmt</text>
+
+        <!-- Row 2 -->
+
+        <!-- 6. backup (STUB) -->
+        <rect x="50" y="365" width="210" height="280" rx="8" fill="#0f172a"/>
+        <rect x="50" y="365" width="210" height="280" rx="8" fill="rgba(120, 53, 15, 0.2)" stroke="#fbbf24" stroke-width="1" opacity="0.6"/>
+        <rect x="50" y="365" width="210" height="4" rx="2" fill="#fbbf24"/>
+        <text x="155" y="388" fill="white" font-size="11" font-weight="700" text-anchor="middle">backup</text>
+        <rect x="180" y="396" width="60" height="16" rx="3" fill="rgba(120, 53, 15, 0.4)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="210" y="407" fill="#fbbf24" font-size="8" font-weight="700" text-anchor="middle">STUB</text>
+        <text x="60" y="430" fill="#94a3b8" font-size="8">Handler:</text>
+        <text x="60" y="443" fill="#cbd5e1" font-size="8">Windows-only handler</text>
+        <text x="60" y="463" fill="#94a3b8" font-size="8">Msg types:</text>
+        <text x="60" y="476" fill="#cbd5e1" font-size="8">backup_request</text>
+        <text x="60" y="486" fill="#cbd5e1" font-size="8">restore_request</text>
+        <text x="60" y="506" fill="#94a3b8" font-size="8">Last test:</text>
+        <text x="60" y="519" fill="#fbbf24" font-size="8">⚠ WSL stub</text>
+        <text x="60" y="531" fill="#fbbf24" font-size="8">  needs Windows</text>
+        <text x="60" y="555" fill="#64748b" font-size="7">SKILL.md: 11 files</text>
+        <text x="60" y="568" fill="#64748b" font-size="7">PowerShell + robocopy</text>
+        <text x="60" y="580" fill="#64748b" font-size="7">  (Win host only)</text>
+        <text x="60" y="605" fill="#fbbf24" font-size="7">⚠ prune candidate</text>
+        <text x="60" y="625" fill="#475569" font-size="7">keep if Win deploys</text>
+
+        <!-- 7. hermes (LIVE) -->
+        <rect x="280" y="365" width="210" height="280" rx="8" fill="#0f172a"/>
+        <rect x="280" y="365" width="210" height="280" rx="8" fill="rgba(6, 78, 59, 0.15)" stroke="#34d399" stroke-width="1" opacity="0.6"/>
+        <rect x="280" y="365" width="210" height="4" rx="2" fill="#34d399"/>
+        <text x="385" y="388" fill="white" font-size="11" font-weight="700" text-anchor="middle">hermes</text>
+        <rect x="410" y="396" width="60" height="16" rx="3" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="440" y="407" fill="#34d399" font-size="8" font-weight="700" text-anchor="middle">LIVE</text>
+        <text x="290" y="430" fill="#94a3b8" font-size="8">Handler:</text>
+        <text x="290" y="443" fill="#cbd5e1" font-size="8">chat subprocess</text>
+        <text x="290" y="463" fill="#94a3b8" font-size="8">Msg types:</text>
+        <text x="290" y="476" fill="#cbd5e1" font-size="8">chat_message</text>
+        <text x="290" y="486" fill="#cbd5e1" font-size="8">agent_command</text>
+        <text x="290" y="506" fill="#94a3b8" font-size="8">Last test:</text>
+        <text x="290" y="519" fill="#34d399" font-size="8">✓ chat works</text>
+        <text x="290" y="531" fill="#34d399" font-size="8">  subprocess live</text>
+        <text x="290" y="555" fill="#64748b" font-size="7">SKILL.md: 14 files</text>
+        <text x="290" y="568" fill="#64748b" font-size="7">spawns hermes CLI</text>
+        <text x="290" y="580" fill="#64748b" font-size="7">  as subprocess</text>
+        <text x="290" y="605" fill="#34d399" font-size="7">✓ keep — core</text>
+        <text x="290" y="625" fill="#475569" font-size="7">chat interface</text>
+
+        <!-- 8. openclaw (LIVE) -->
+        <rect x="510" y="365" width="210" height="280" rx="8" fill="#0f172a"/>
+        <rect x="510" y="365" width="210" height="280" rx="8" fill="rgba(6, 78, 59, 0.15)" stroke="#34d399" stroke-width="1" opacity="0.6"/>
+        <rect x="510" y="365" width="210" height="4" rx="2" fill="#34d399"/>
+        <text x="615" y="388" fill="white" font-size="11" font-weight="700" text-anchor="middle">openclaw</text>
+        <rect x="640" y="396" width="60" height="16" rx="3" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="670" y="407" fill="#34d399" font-size="8" font-weight="700" text-anchor="middle">LIVE</text>
+        <text x="520" y="430" fill="#94a3b8" font-size="8">Handler:</text>
+        <text x="520" y="443" fill="#cbd5e1" font-size="8">gateway + pgrep</text>
+        <text x="520" y="463" fill="#94a3b8" font-size="8">Msg types:</text>
+        <text x="520" y="476" fill="#cbd5e1" font-size="8">gateway_command</text>
+        <text x="520" y="486" fill="#cbd5e1" font-size="8">status_check</text>
+        <text x="520" y="506" fill="#94a3b8" font-size="8">Last test:</text>
+        <text x="520" y="519" fill="#34d399" font-size="8">✓ pgrep detects</text>
+        <text x="520" y="531" fill="#34d399" font-size="8">  gateway alive</text>
+        <text x="520" y="555" fill="#64748b" font-size="7">SKILL.md: 16 files</text>
+        <text x="520" y="568" fill="#64748b" font-size="7">process detection</text>
+        <text x="520" y="580" fill="#64748b" font-size="7">  via pgrep</text>
+        <text x="520" y="605" fill="#34d399" font-size="7">✓ keep — core</text>
+        <text x="520" y="625" fill="#475569" font-size="7">gateway bridge</text>
+
+        <!-- 9. ollama-router (LIVE) -->
+        <rect x="740" y="365" width="210" height="280" rx="8" fill="#0f172a"/>
+        <rect x="740" y="365" width="210" height="280" rx="8" fill="rgba(6, 78, 59, 0.15)" stroke="#34d399" stroke-width="1" opacity="0.6"/>
+        <rect x="740" y="365" width="210" height="4" rx="2" fill="#34d399"/>
+        <text x="845" y="388" fill="white" font-size="11" font-weight="700" text-anchor="middle">ollama-router</text>
+        <rect x="870" y="396" width="60" height="16" rx="3" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="900" y="407" fill="#34d399" font-size="8" font-weight="700" text-anchor="middle">LIVE</text>
+        <text x="750" y="430" fill="#94a3b8" font-size="8">Handler:</text>
+        <text x="750" y="443" fill="#cbd5e1" font-size="8">routes 5 models</text>
+        <text x="750" y="463" fill="#94a3b8" font-size="8">Msg types:</text>
+        <text x="750" y="476" fill="#cbd5e1" font-size="8">model_route</text>
+        <text x="750" y="486" fill="#cbd5e1" font-size="8">infer_request</text>
+        <text x="750" y="506" fill="#94a3b8" font-size="8">Last test:</text>
+        <text x="750" y="519" fill="#34d399" font-size="8">✓ gemma4:latest</text>
+        <text x="750" y="531" fill="#34d399" font-size="8">  → "Hello there!"</text>
+        <text x="750" y="555" fill="#64748b" font-size="7">SKILL.md: 8 files</text>
+        <text x="750" y="568" fill="#64748b" font-size="7">5 ollama models</text>
+        <text x="750" y="580" fill="#64748b" font-size="7">  prefer_local=True</text>
+        <text x="750" y="605" fill="#34d399" font-size="7">✓ keep — core</text>
+        <text x="750" y="625" fill="#475569" font-size="7">model fallback</text>
+
+        <!-- 10. dr-agent (LIVE) -->
+        <rect x="970" y="365" width="210" height="280" rx="8" fill="#0f172a"/>
+        <rect x="970" y="365" width="210" height="280" rx="8" fill="rgba(6, 78, 59, 0.15)" stroke="#34d399" stroke-width="1" opacity="0.6"/>
+        <rect x="970" y="365" width="210" height="4" rx="2" fill="#34d399"/>
+        <text x="1075" y="388" fill="white" font-size="11" font-weight="700" text-anchor="middle">dr-agent</text>
+        <rect x="1100" y="396" width="60" height="16" rx="3" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="1130" y="407" fill="#34d399" font-size="8" font-weight="700" text-anchor="middle">LIVE</text>
+        <text x="980" y="430" fill="#94a3b8" font-size="8">Handler:</text>
+        <text x="980" y="443" fill="#cbd5e1" font-size="8">scan + monitor</text>
+        <text x="980" y="463" fill="#94a3b8" font-size="8">Msg types:</text>
+        <text x="980" y="476" fill="#cbd5e1" font-size="8">dr_scan</text>
+        <text x="980" y="486" fill="#cbd5e1" font-size="8">dr_monitor</text>
+        <text x="980" y="506" fill="#94a3b8" font-size="8">Last test:</text>
+        <text x="980" y="519" fill="#34d399" font-size="8">✓ 8 pytest pass</text>
+        <text x="980" y="531" fill="#34d399" font-size="8">  scan/remediate</text>
+        <text x="980" y="555" fill="#64748b" font-size="7">SKILL.md: 14 files</text>
+        <text x="980" y="568" fill="#64748b" font-size="7">scan/monitor/</text>
+        <text x="980" y="580" fill="#64748b" font-size="7">  remediate/verify</text>
+        <text x="980" y="605" fill="#34d399" font-size="7">✓ keep — core</text>
+        <text x="980" y="625" fill="#475569" font-size="7">DR pipeline</text>
+
+        <!-- Bottom legend bar -->
+        <rect x="50" y="660" width="1100" height="30" rx="6" fill="#0f172a"/>
+        <rect x="50" y="660" width="1100" height="30" rx="6" fill="rgba(15, 23, 42, 0.5)" stroke="#1e293b" stroke-width="1"/>
+        <rect x="70" y="671" width="12" height="10" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="88" y="680" fill="#94a3b8" font-size="8">LIVE (8 agents)</text>
+        <rect x="200" y="671" width="12" height="10" rx="2" fill="rgba(120, 53, 15, 0.4)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="218" y="680" fill="#94a3b8" font-size="8">STUB (2 agents)</text>
+        <text x="340" y="680" fill="#34d399" font-size="8">✓ = tested/verified</text>
+        <text x="470" y="680" fill="#fbbf24" font-size="8">⚠ = pending/prune candidate</text>
+        <text x="700" y="680" fill="#fb923c" font-size="8" font-weight="600">Agent Hub: 10 agents · 139 SKILL.md · 7.4 MB</text>
+        <text x="980" y="680" fill="#64748b" font-size="8">_STATUS.md ledger</text>
+      </svg>
+    </div>
+
+    <!-- Agent Hub Inventory + Routing + Ledger Cards -->
+    <div class="cards" style="margin-top: 2rem;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot orange"></div>
+          <h3>Agent Hub Inventory</h3>
+        </div>
+        <ul>
+          <li>• 10 agents in cross-agent bus</li>
+          <li>• 139 SKILL.md files total</li>
+          <li>• 7.4 MB hub footprint</li>
+          <li>• 8 LIVE handlers (tested)</li>
+          <li>• 2 STUB handlers (pending)</li>
+          <li style="color:#34d399">✓ stubs: compliance-legal, backup</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot cyan"></div>
+          <h3>Orchestrator Routing</h3>
+        </div>
+        <ul>
+          <li>• 13+ INTENTS routed by orchestrator</li>
+          <li>• compliance_request → compliance-legal</li>
+          <li>• gdpr_scan → gdpr-compliance</li>
+          <li>• layout_request → drive-layout</li>
+          <li>• vertex_request → vertex-orchestration</li>
+          <li>• git_profile_switch → git-profiles</li>
+          <li>• backup_request → backup (stub)</li>
+          <li>• chat_message → hermes subprocess</li>
+          <li>• gateway_command → openclaw</li>
+          <li>• model_route → ollama-router</li>
+          <li>• dr_scan/dr_monitor → dr-agent</li>
+          <li style="color:#34d399">✓ fallback: vertex → ollama</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot violet"></div>
+          <h3>_STATUS.md Keep/Prune Ledger</h3>
+        </div>
+        <ul>
+          <li>• <strong style="color:#34d399">KEEP (8):</strong></li>
+          <li>  gdpr-compliance · drive-layout</li>
+          <li>  vertex-orchestration · git-profiles</li>
+          <li>  hermes · openclaw · ollama-router</li>
+          <li>  dr-agent</li>
+          <li>• <strong style="color:#fbbf24">PRUNE CANDIDATES (2):</strong></li>
+          <li>  compliance-legal (stub-IaC)</li>
+          <li>  backup (Windows-only stub)</li>
+          <li style="color:#fbbf24">⚠ keep if IaC/Win deploys</li>
+          <li style="color:#34d399">✓ reviewed 2026-08-16</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <p class="footer">
+      Conor's AI Agent Topology — Integration Audit 2026-08-16 • 4 fixes + 9 DR tasks + 6 subagents + 3-layer fallback + fwd-think + 10-agent hub audit • WSL2 Hermes on AlmaLinux-10
+    </p>
+  </div>
+</body>
+</html>

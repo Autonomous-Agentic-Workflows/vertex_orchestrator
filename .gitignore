@@ -8,3 +8,15 @@ build/
 .venv/
 .env
 .aider*
+
+# recovery-overseer (Node.js subproject)
+recovery_overseer/node_modules/
+recovery_overseer/dist/
+recovery_overseer/.env.local
+recovery_overseer/*.log
+
+# recovery data (contains seeds, WIF keys — never commit)
+recovery_data/ALL_TARGETS.txt
+
+# Firebase project config (replace with your own)
+recovery_overseer/firebase-applet-config.json

@@ -1,8 +1,39 @@
 # vertex_orchestrator — Architecture
 
+> **Visual topology**: See [`docs/conor-agent-topology.html`](docs/conor-agent-topology.html) for an interactive SVG diagram of the full agent stack (Hermes + OpenClaw + Vertex AI + AGY SDK + MCP, WSL2 host + GCP cloud).
+
 ## What it is
 
-A Python backend exposing three agent frameworks over one REST API, now integrated with the crypto recovery operation.
+A Python backend exposing three agent frameworks over one REST API, now integrated with the crypto recovery operation and the recovery-overseer management dashboard.
+
+## Recovery Overseer (managed sub-service)
+
+The `recovery_overseer/` directory contains a TypeScript/React sub-project
+that provides an MCP (Model Context Protocol) server, Google Workspace
+integrations (Gmail, Slides, Tasks, Keep, Drive), and a Spark analytics
+dashboard.  It runs as a **child service** under the Python orchestrator.
+
+```
+vertex_orchestrator (Python, port 8000)
+  └── recovery-overseer (Node/Express, port 3000)
+        ├── MCP JSON-RPC 2.0 server
+        ├── Google Workspace tools (Gmail, Slides, Tasks, Keep, Drive)
+        ├── Spark engine + AI optimization (Gemini)
+        └── Cloud SQL / Firebase / Firestore
+```
+
+| Endpoint | Method | Auth | Purpose |
+|----------|--------|------|---------|
+| /overseer/status | GET | No | Check if recovery-overseer is running + health |
+| /overseer/start | POST | Yes | Start the recovery-overseer Node.js service |
+| /overseer/stop | POST | Yes | Stop the recovery-overseer service |
+| /overseer/mcp | POST | Yes | Proxy MCP JSON-RPC 2.0 requests to recovery-overseer |
+| /overseer/mcp/info | GET | No | Get MCP server info (tools, resources, prompts) |
+| /overseer/proxy/* | POST | Yes | Generic proxy to any recovery-overseer API endpoint |
+
+The `OverseerManager` (`src/vertex_orchestrator/overseer_manager.py`) handles
+subprocess lifecycle (start/stop), health monitoring, and request proxying.
+It auto-runs `npm install` on first start if `node_modules/` is missing.
 
 | Task | Routed to | What it does |
 |------|-----------|-------------|
@@ -28,6 +59,7 @@ All three talk to Google Vertex AI (gemini-2.5-pro / gemini-2.5-flash in us-cent
 | /execute | POST | Yes | Execute single task (ANALYSIS/CONVERSATION/EDIT) |
 | /batch | POST | Yes | Execute multiple tasks in sequence |
 | /recovery/status | POST | Yes | Full recovery report (config validation + log analysis) |
+| /recovery/targets | GET | Yes | Parse ALL_TARGETS.txt — returns structured address list, coin summary, (seeds/WIFs/YPRV redacted by default; `?include_sensitive=true` for trusted local use) |
 | /recovery/analyze-seeds | POST | Yes | AI analysis of seed derivation paths, suggests missed paths |
 | /recovery/passphrases | POST | Yes | AI-generated passphrase variations |
 | /recovery/analyze-log | POST | Yes | Parse scanner logs for patterns, hits, errors |
@@ -40,6 +72,23 @@ The `recovery.py` module bridges Hermes with MasterRecovery3:
 - Sanitizes all sensitive data (seeds, WIF keys, passphrases) before sending to AI
 - Routes through CrewAI -> litellm -> Vertex AI (gemini-2.5-flash)
 - AI validates recovery.json, analyzes seed paths, generates passphrase variants, parses scanner logs
+- **Target list parser** (`load_targets()`) parses `recovery_data/ALL_TARGETS.txt` into structured JSON
+  - 45 addresses across BTC (32), LTC (5), DOGE (2), PPC (4), SOL (2)
+  - Seeds, WIF keys, and YPRV are **redacted by default** — use `?include_sensitive=true` only in trusted local contexts
+  - The real `ALL_TARGETS.txt` is gitignored; a sanitized `ALL_TARGETS.example.txt` is committed as a template
+- **BTCRecover code reviewer** at `recovery_overseer/btcrecover-reviewer/` — AI Studio React app that uses Gemini to review BTCRecover-Master Python code snippets for security, quality, and performance
+
+### Recovery workspace documentation
+
+The `docs/` directory contains reference documents from the OneDrive recovery workspace:
+
+| Document | Description |
+|----------|-------------|
+| `conor-agent-topology.html` | Interactive SVG topology diagram of the full agent stack |
+| `deep-research-report.md` | Gemini Deep Research: "Autonomous Agent Development Blueprint for a Windows Workflow on C Drive" |
+| `workspace-organization-report.md` | MasterRecovery3 workspace organization report (42,528 files, 183 GiB, dedup passes) |
+| `workspace-root-map.md` | Filesystem inventory map of MasterRecovery3 root buckets |
+| `workspace-largest-files.csv` | Largest files in the MasterRecovery3 workspace |
 
 ### Key AI Findings (2026-08-13)
 
