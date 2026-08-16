@@ -12,7 +12,7 @@
 | 3 | Cline CLI as 4th provider | P1 | ✅ | `/cline/execute` endpoint + ClineRunner module |
 | 4 | Event log integration | P1 | ✅ | event_log.py module, auth failures logged |
 | 5 | Webhook/notification endpoint | P2 | ✅ | Register/unregister/list callbacks, fires on task.complete |
-| 6 | Cloud Run deployment (DR) | P2 | 📋 | GCP disaster recovery deployment |
+| 6 | Cloud Run deployment (DR) | P2 | ✅ | Dockerfile + CLOUD_RUN_DEPLOY.md with gcloud deploy commands |
 | 7 | Klarity security fix (P0) | P1 | 📋 | Cloud Run service unauthenticated |
 | 8 | API key rotation | P1 | ✅ | Secure key in .env, "test-key" replaced |
 | 9 | DevGate Android bridge verify | P2 | 📋 | Mobile app → orchestrator connectivity |
