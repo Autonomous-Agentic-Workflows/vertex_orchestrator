@@ -247,6 +247,14 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
                 "port": culina.port,
                 "health": culina.check_health() if culina.is_running() else None,
             })
+        elif path == "/agents-cli/version":
+            from vertex_orchestrator.agents_cli_manager import get_agents_cli
+            cli = get_agents_cli()
+            self._send_json(200, cli.version())
+        elif path == "/agents-cli/playground":
+            from vertex_orchestrator.agents_cli_manager import get_agents_cli
+            cli = get_agents_cli()
+            self._send_json(200, cli.playground_status())
         else:
             self._send_json(404, {"error": "not found"})
 

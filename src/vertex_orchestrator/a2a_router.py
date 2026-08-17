@@ -97,6 +97,7 @@ class A2ARouter:
         self._agents: dict[str, Agent] = {}
         self._lock = threading.RLock()
         self._message_log: list[dict] = []
+        self._port = int(os.environ.get("VERTEX_PORT", "8000"))
         self._max_log = 500
         self._webhook_fire: Optional[Any] = None  # set by server for webhook integration
 
@@ -446,8 +447,13 @@ class A2ARouter:
         return response
 
     def _deliver(self, agent: Agent, message: A2AMessage) -> dict[str, Any]:
-        """Deliver a message to an agent via HTTP or in-process."""
-        if agent.endpoint:
+        """Deliver a message to an agent via HTTP or in-process.
+
+        If the agent's endpoint points back to this server (localhost:8000),
+        treat it as in-process to avoid a self-referential HTTP deadlock.
+        """
+        self_endpoint = f"http://localhost:{self._port}"
+        if agent.endpoint and agent.endpoint.rstrip("/") != self_endpoint:
             try:
                 payload = json.dumps(asdict(message)).encode("utf-8")
                 req = Request(
