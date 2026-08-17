@@ -1,28 +1,84 @@
 PROPRIETARY LICENSE — ALL RIGHTS RESERVED
 
-Copyright (c) 2026 Conor Gold (admin@208fenceandgate.com). All Rights Reserved.
+Copyright (c) 2024-2026 208 Fence and Gate LLC (208developeroperations).
+All Rights Reserved.
 
-LICENSEE: Conor Gold, admin@208fenceandgate.com
+---
 
-No part of this software, its source code, documentation, configuration files,
-or associated materials may be copied, modified, merged, published, distributed,
-sublicensed, sold, or used in any form, in whole or in part, without the prior
-express written permission of the copyright holder and licensee, Conor Gold.
+### THIS SOFTWARE IS PROPRIETARY AND CONFIDENTIAL
 
-UNAUTHORIZED USE, REPRODUCTION, OR DISTRIBUTION OF THIS SOFTWARE CONSTITUTES
-A VIOLATION OF THIS LICENSE AND MAY BE SUBJECT TO LEGAL ACTION.
+This software, including all source code, configurations, documentation,
+agent definitions, orchestration logic, and associated materials, is the
+exclusive intellectual property of 208 Fence and Gate LLC (208developeroperations).
 
-This software is provided for internal use by authorized agents and operators
-within the Autonomous-Agentic-Workflows organization, under the direction of
-Conor Gold (admin@208fenceandgate.com). External use requires a separate
-written license agreement with the copyright holder.
+---
+
+### RESTRICTIONS
+
+**YOU MAY NOT:**
+
+1. Copy, reproduce, distribute, or transmit this software in any form
+2. Modify, adapt, translate, or create derivative works
+3. Reverse engineer, decompile, or disassemble
+4. Publish, disclose, or make available to any third party
+5. Use for any commercial purpose without explicit written license
+6. Remove or alter any copyright, trademark, or proprietary notices
+7. Use any portion to train AI models without authorization
+
+**THE FOLLOWING ARE TRADE SECRETS:**
+
+- Multi-agent orchestration and routing architectures
+- Cryptographic recovery methodologies and pipelines
+- Agent coordination, delegation, and communication protocols
+- Configuration schemas and deployment patterns
+- Business logic, financial models, and product innovations
+
+---
+
+### AUTHORIZED USE
+
+Only the following are permitted without additional license:
+
+- Internal use by authorized agents and operators within the
+  208 Fence and Gate LLC / 208developeroperations organization
+- Execution of operations on owned assets
+- Backup and archival of encrypted working copies
+
+External use requires a separate written license agreement.
+
+---
+
+### ENFORCEMENT
+
+Violation of this license constitutes:
+
+- Copyright infringement under 17 U.S.C. § 101 et seq.
+- Trade secret misappropriation under 18 U.S.C. § 1832 (DTSA)
+- Breach of contract and fiduciary duty
+
+Remedies include injunctive relief, actual damages, statutory damages
+up to $150,000 per work, attorneys' fees, and exemplary damages
+for willful infringement.
+
+---
+
+### NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+IN NO EVENT SHALL 208 FENCE AND GATE LLC BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+### CONTACT
 
 For licensing inquiries: admin@208fenceandgate.com
+For security/breach reports: [SECURE CHANNEL ONLY]
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+**EFFECTIVE DATE: 2024-01-01**
+**VERSION: 1.0**
+**CLASSIFICATION: TRADE SECRET — CONFIDENTIAL**
