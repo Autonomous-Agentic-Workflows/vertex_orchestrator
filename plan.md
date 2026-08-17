@@ -21,6 +21,8 @@
 | 12 | Recovery Overseer integration | P1 | ✅ | 492 deps installed, .env.local, OverseerManager |
 | 13 | Culina AI integration | P1 | ✅ | 310 deps installed, CulinaManager, port 3001 |
 | 14 | Mobile Device evidence catalog | P2 | ✅ | 103 photos cataloged + symlinked to photo-clues |
+| 15 | Hierarchical A2A routing | P1 | ✅ | 3-tier tree, delegate/report/escalate/broadcast, 16 tests |
+| 16 | Google Agents CLI integration | P1 | ✅ | v1.3.1 installed, AgentsCliManager, 9 endpoints, 6 MCP tools |
 
 ## Pending Actions Status (2026-08-16)
 

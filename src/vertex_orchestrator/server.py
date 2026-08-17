@@ -25,6 +25,21 @@ Endpoints:
   POST /a2a/broadcast   — broadcast to all matching agents
   POST /a2a/register    — register a new A2A agent
   POST /a2a/unregister  — unregister an A2A agent
+  GET  /a2a/tree        — hierarchical agent tree
+  POST /a2a/delegate    — parent delegates task to child
+  POST /a2a/report      — child reports to parent
+  POST /a2a/escalate    — escalate to grandparent (skip level)
+  POST /a2a/broadcast-down — broadcast to all descendants
+  POST /a2a/broadcast-up   — broadcast to all ancestors
+  GET  /agents-cli/version — get agents-cli version
+  POST /agents-cli/create  — scaffold a new agent project
+  POST /agents-cli/deploy  — deploy an agent
+  POST /agents-cli/eval    — run evaluation
+  POST /agents-cli/run     — run agent with a prompt
+  POST /agents-cli/publish — publish an agent
+  GET  /agents-cli/playground — playground status
+  POST /agents-cli/playground/start — start playground
+  POST /agents-cli/playground/stop  — stop playground
   GET  /culina/status   — culina-ai service status
   POST /culina/start    — start culina-ai service
   POST /culina/stop     — stop culina-ai service
@@ -220,6 +235,10 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             router = get_router()
             limit = int(query_params.get("limit", "50"))
             self._send_json(200, {"messages": router.get_message_log(limit=limit)})
+        elif path == "/a2a/tree":
+            from vertex_orchestrator.a2a_router import get_router
+            router = get_router()
+            self._send_json(200, router.get_tree())
         elif path == "/culina/status":
             from vertex_orchestrator.culina_manager import get_culina
             culina = get_culina()
@@ -327,6 +346,77 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             self._send_json(status, {"success": result["status"] == "unregistered", **result})
             return
 
+        if path == "/a2a/delegate":
+            from vertex_orchestrator.a2a_router import get_router
+            router = get_router()
+            sender_id = body.get("sender", "")
+            child_id = body.get("recipient", "")
+            content = body.get("content", "")
+            keywords = body.get("keywords", [])
+            if not sender_id or not child_id or not content:
+                self._send_json(400, {"success": False, "error": "sender, recipient, and content are required"})
+                return
+            result = router.delegate(sender_id, child_id, content, keywords)
+            self._send_json(200, result)
+            _fire_webhooks("a2a.delegate", result)
+            return
+
+        if path == "/a2a/report":
+            from vertex_orchestrator.a2a_router import get_router
+            router = get_router()
+            sender_id = body.get("sender", "")
+            content = body.get("content", "")
+            keywords = body.get("keywords", [])
+            if not sender_id or not content:
+                self._send_json(400, {"success": False, "error": "sender and content are required"})
+                return
+            result = router.report(sender_id, content, keywords)
+            self._send_json(200, result)
+            _fire_webhooks("a2a.report", result)
+            return
+
+        if path == "/a2a/escalate":
+            from vertex_orchestrator.a2a_router import get_router
+            router = get_router()
+            sender_id = body.get("sender", "")
+            content = body.get("content", "")
+            keywords = body.get("keywords", [])
+            if not sender_id or not content:
+                self._send_json(400, {"success": False, "error": "sender and content are required"})
+                return
+            result = router.escalate(sender_id, content, keywords)
+            self._send_json(200, result)
+            _fire_webhooks("a2a.escalate", result)
+            return
+
+        if path == "/a2a/broadcast-down":
+            from vertex_orchestrator.a2a_router import get_router
+            router = get_router()
+            sender_id = body.get("sender", "")
+            content = body.get("content", "")
+            keywords = body.get("keywords", [])
+            if not sender_id or not content:
+                self._send_json(400, {"success": False, "error": "sender and content are required"})
+                return
+            result = router.broadcast_down(sender_id, content, keywords)
+            self._send_json(200, result)
+            _fire_webhooks("a2a.broadcast_down", result)
+            return
+
+        if path == "/a2a/broadcast-up":
+            from vertex_orchestrator.a2a_router import get_router
+            router = get_router()
+            sender_id = body.get("sender", "")
+            content = body.get("content", "")
+            keywords = body.get("keywords", [])
+            if not sender_id or not content:
+                self._send_json(400, {"success": False, "error": "sender and content are required"})
+                return
+            result = router.broadcast_up(sender_id, content, keywords)
+            self._send_json(200, result)
+            _fire_webhooks("a2a.broadcast_up", result)
+            return
+
         # Culina service routes don't need VertexAI config
         if path == "/culina/start":
             if not self._check_auth():
@@ -360,6 +450,132 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             culina_path = "/" + path[len("/culina/proxy/"):]
             result = culina.proxy_request("POST", culina_path, body)
             self._send_json(200, result)
+            return
+
+        # Agents CLI routes don't need VertexAI config
+        if path == "/agents-cli/version":
+            from vertex_orchestrator.agents_cli_manager import get_agents_cli
+            cli = get_agents_cli()
+            result = cli.version()
+            self._send_json(200, result)
+            return
+
+        if path == "/agents-cli/create":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.agents_cli_manager import get_agents_cli
+            cli = get_agents_cli()
+            project_name = body.get("project_name", "")
+            output_dir = body.get("output_dir", ".")
+            agent_template = body.get("agent_template")
+            deployment_target = body.get("deployment_target")
+            if not project_name:
+                self._send_json(400, {"success": False, "error": "project_name is required"})
+                return
+            result = cli.create(project_name, output_dir, agent_template, deployment_target)
+            self._send_json(200, result)
+            _fire_webhooks("agents_cli.create", result)
+            return
+
+        if path == "/agents-cli/deploy":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.agents_cli_manager import get_agents_cli
+            cli = get_agents_cli()
+            project_dir = body.get("project_dir")
+            deployment_target = body.get("deployment_target")
+            list_deployments = body.get("list", False)
+            no_wait = body.get("no_wait", False)
+            result = cli.deploy(project_dir, deployment_target, list_deployments, no_wait)
+            self._send_json(200, result)
+            _fire_webhooks("agents_cli.deploy", result)
+            return
+
+        if path == "/agents-cli/eval":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.agents_cli_manager import get_agents_cli
+            cli = get_agents_cli()
+            project_dir = body.get("project_dir")
+            sub_command = body.get("sub_command", "run")
+            if sub_command == "generate":
+                result = cli.eval_generate(project_dir)
+            elif sub_command == "grade":
+                result = cli.eval_grade(project_dir)
+            elif sub_command == "compare":
+                file_a = body.get("file_a", "")
+                file_b = body.get("file_b", "")
+                if not file_a or not file_b:
+                    self._send_json(400, {"success": False, "error": "file_a and file_b required for compare"})
+                    return
+                result = cli.eval_compare(file_a, file_b)
+            else:
+                result = cli.eval_run(project_dir)
+            self._send_json(200, result)
+            _fire_webhooks("agents_cli.eval", result)
+            return
+
+        if path == "/agents-cli/run":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.agents_cli_manager import get_agents_cli
+            cli = get_agents_cli()
+            prompt = body.get("prompt", "")
+            project_dir = body.get("project_dir")
+            if not prompt:
+                self._send_json(400, {"success": False, "error": "prompt is required"})
+                return
+            result = cli.run_agent(prompt, project_dir)
+            self._send_json(200, result)
+            _fire_webhooks("agents_cli.run", result)
+            return
+
+        if path == "/agents-cli/publish":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.agents_cli_manager import get_agents_cli
+            cli = get_agents_cli()
+            target = body.get("target", "agent_runtime")
+            project_dir = body.get("project_dir")
+            result = cli.publish(target, project_dir)
+            self._send_json(200, result)
+            _fire_webhooks("agents_cli.publish", result)
+            return
+
+        if path == "/agents-cli/playground":
+            from vertex_orchestrator.agents_cli_manager import get_agents_cli
+            cli = get_agents_cli()
+            result = cli.playground_status()
+            self._send_json(200, result)
+            return
+
+        if path == "/agents-cli/playground/start":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.agents_cli_manager import get_agents_cli
+            cli = get_agents_cli()
+            port = body.get("port", 8080)
+            project_dir = body.get("project_dir")
+            result = cli.start_playground(port, project_dir)
+            self._send_json(200, result)
+            _fire_webhooks("agents_cli.playground_start", result)
+            return
+
+        if path == "/agents-cli/playground/stop":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.agents_cli_manager import get_agents_cli
+            cli = get_agents_cli()
+            result = cli.stop_playground()
+            self._send_json(200, result)
+            _fire_webhooks("agents_cli.playground_stop", result)
             return
 
         # Webhook routes don't need VertexAI config

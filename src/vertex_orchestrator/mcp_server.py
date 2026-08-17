@@ -213,6 +213,38 @@ TOOLS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "a2a_tree",
+        "description": "Get the hierarchical agent tree (Orchestrator → Managers → Workers).",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "a2a_delegate",
+        "description": "Delegate a task from a parent agent to a specific child agent.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "sender": {"type": "string", "description": "ID of the parent agent"},
+                "recipient": {"type": "string", "description": "ID of the child agent"},
+                "content": {"type": "string", "description": "Task/message to delegate"},
+                "keywords": {"type": "array", "items": {"type": "string"}, "description": "Optional keywords"},
+            },
+            "required": ["sender", "recipient", "content"],
+        },
+    },
+    {
+        "name": "a2a_report",
+        "description": "Report results from a child agent up to its parent agent.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "sender": {"type": "string", "description": "ID of the child agent"},
+                "content": {"type": "string", "description": "Report content"},
+                "keywords": {"type": "array", "items": {"type": "string"}, "description": "Optional keywords"},
+            },
+            "required": ["sender", "content"],
+        },
+    },
+    {
         "name": "culina_status",
         "description": "Check if the Culina AI Studio Orchestrator service is running.",
         "inputSchema": {"type": "object", "properties": {}},
@@ -226,6 +258,73 @@ TOOLS: list[dict[str, Any]] = [
         "name": "culina_stop",
         "description": "Stop the Culina AI Studio Orchestrator service.",
         "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "agents_cli_version",
+        "description": "Get the google-agents-cli version.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "agents_cli_create",
+        "description": "Create a new agent project from templates using agents-cli.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "project_name": {"type": "string", "description": "Name for the new agent project"},
+                "output_dir": {"type": "string", "description": "Output directory (default: current dir)"},
+                "agent_template": {"type": "string", "description": "Template identifier (e.g. chat_agent)"},
+                "deployment_target": {"type": "string", "enum": ["agent_runtime", "cloud_run", "gke", "none"]},
+            },
+            "required": ["project_name"],
+        },
+    },
+    {
+        "name": "agents_cli_deploy",
+        "description": "Deploy an agent to Agent Runtime / Cloud Run / GKE using agents-cli.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "project_dir": {"type": "string", "description": "Project directory to deploy"},
+                "deployment_target": {"type": "string", "enum": ["agent_runtime", "cloud_run", "gke"]},
+                "list": {"type": "boolean", "description": "List existing deployments"},
+            },
+        },
+    },
+    {
+        "name": "agents_cli_eval",
+        "description": "Run evaluation on an agent project (generate + grade).",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "project_dir": {"type": "string", "description": "Project directory to evaluate"},
+                "sub_command": {"type": "string", "enum": ["run", "generate", "grade", "compare"],
+                                "description": "Eval sub-command (default: run)"},
+            },
+        },
+    },
+    {
+        "name": "agents_cli_run",
+        "description": "Run an agent with a single prompt (non-interactive).",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "prompt": {"type": "string", "description": "Prompt to send to the agent"},
+                "project_dir": {"type": "string", "description": "Project directory"},
+            },
+            "required": ["prompt"],
+        },
+    },
+    {
+        "name": "agents_cli_playground",
+        "description": "Check, start, or stop the agents-cli playground server.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "enum": ["status", "start", "stop"],
+                           "description": "Action to perform (default: status)"},
+                "port": {"type": "integer", "description": "Port for playground (default: 8080)"},
+            },
+        },
     },
 ]
 
@@ -333,12 +432,36 @@ def dispatch_tool(name: str, args: dict[str, Any]) -> dict[str, Any]:
     elif name == "a2a_messages":
         limit = args.get("limit", 50)
         return _get(f"/a2a/messages?limit={limit}")
+    elif name == "a2a_tree":
+        return _get("/a2a/tree")
+    elif name == "a2a_delegate":
+        return _post("/a2a/delegate", args)
+    elif name == "a2a_report":
+        return _post("/a2a/report", args)
     elif name == "culina_status":
         return _get("/culina/status")
     elif name == "culina_start":
         return _post("/culina/start", {})
     elif name == "culina_stop":
         return _post("/culina/stop", {})
+    elif name == "agents_cli_version":
+        return _get("/agents-cli/version")
+    elif name == "agents_cli_create":
+        return _post("/agents-cli/create", args)
+    elif name == "agents_cli_deploy":
+        return _post("/agents-cli/deploy", args)
+    elif name == "agents_cli_eval":
+        return _post("/agents-cli/eval", args)
+    elif name == "agents_cli_run":
+        return _post("/agents-cli/run", args)
+    elif name == "agents_cli_playground":
+        action = args.get("action", "status")
+        if action == "start":
+            return _post("/agents-cli/playground/start", args)
+        elif action == "stop":
+            return _post("/agents-cli/playground/stop", {})
+        else:
+            return _get("/agents-cli/playground")
     else:
         return {"success": False, "error": f"Unknown tool: {name}"}
 

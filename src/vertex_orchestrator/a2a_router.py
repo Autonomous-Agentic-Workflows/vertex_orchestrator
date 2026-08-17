@@ -62,6 +62,9 @@ class Agent:
     endpoint: Optional[str] = None  # URL for HTTP-based agents
     capabilities: list[str] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
+    # --- hierarchy fields ---
+    parent_id: Optional[str] = None  # parent agent id in the hierarchy
+    level: int = 0  # 0=supreme, 1=manager, 2=worker, 3=tool
 
     def matches(self, keyword: str) -> bool:
         """Check if this agent handles a keyword (case-insensitive)."""
@@ -199,6 +202,249 @@ class A2ARouter:
 
         return response
 
+    # --- hierarchical routing --------------------------------------------
+
+    def get_children(self, agent_id: str) -> list[Agent]:
+        """Get direct children of an agent."""
+        with self._lock:
+            return [a for a in self._agents.values() if a.parent_id == agent_id]
+
+    def get_descendants(self, agent_id: str) -> list[Agent]:
+        """Get all descendants (children, grandchildren, etc.) of an agent."""
+        result: list[Agent] = []
+        seen: set[str] = set()
+        queue: list[str] = [agent_id]
+        while queue:
+            current = queue.pop(0)
+            with self._lock:
+                children = [a for a in self._agents.values()
+                           if a.parent_id == current and a.id not in seen]
+            for child in children:
+                seen.add(child.id)
+                result.append(child)
+                queue.append(child.id)
+        return result
+
+    def get_ancestors(self, agent_id: str) -> list[Agent]:
+        """Get all ancestors (parent, grandparent, etc.) of an agent."""
+        result: list[Agent] = []
+        current = self.get_agent(agent_id)
+        if not current:
+            return result
+        seen: set[str] = set()
+        while current and current.parent_id and current.parent_id not in seen:
+            seen.add(current.parent_id)
+            parent = self.get_agent(current.parent_id)
+            if not parent:
+                break
+            result.append(parent)
+            current = parent
+        return result
+
+    def get_tree(self) -> dict[str, Any]:
+        """Build a hierarchical tree of all agents."""
+        with self._lock:
+            # Find root agents (level 0 or no parent)
+            roots = [a for a in self._agents.values()
+                     if a.level == 0 or (a.parent_id and a.parent_id not in self._agents)]
+            # If no explicit roots, use agents with no parent
+            if not roots:
+                roots = [a for a in self._agents.values() if not a.parent_id]
+
+        def build_node(agent: Agent) -> dict[str, Any]:
+            children = self.get_children(agent.id)
+            return {
+                "id": agent.id,
+                "name": agent.name,
+                "type": agent.agent_type,
+                "level": agent.level,
+                "status": agent.status,
+                "children_count": len(children),
+                "children": [build_node(c) for c in children],
+            }
+
+        return {
+            "total_agents": len(self.list_agents()),
+            "roots": [build_node(r) for r in roots],
+        }
+
+    def delegate(self, sender_id: str, child_id: str, content: str,
+                 keywords: list[str] | None = None) -> dict[str, Any]:
+        """Parent delegates a task to a specific child agent.
+
+        Validates that child_id is actually a descendant of sender_id.
+        """
+        sender = self.get_agent(sender_id)
+        child = self.get_agent(child_id)
+
+        if not child:
+            return {"success": False, "error": f"agent not found: {child_id}"}
+        if not sender:
+            return {"success": False, "error": f"sender not found: {sender_id}"}
+
+        # Verify hierarchy: child must be a descendant of sender
+        descendants = self.get_descendants(sender_id)
+        desc_ids = {d.id for d in descendants}
+        if child_id not in desc_ids and child.parent_id != sender_id:
+            return {
+                "success": False,
+                "error": f"{child_id} is not a descendant of {sender_id}",
+            }
+
+        msg = A2AMessage(
+            sender=sender_id,
+            recipient=child_id,
+            content=content,
+            msg_type="delegate",
+            keywords=keywords or [],
+        )
+        result = self.route_message(msg)
+        result["success"] = "error" not in result
+        result["action"] = "delegate"
+        return result
+
+    def report(self, sender_id: str, content: str,
+               keywords: list[str] | None = None) -> dict[str, Any]:
+        """Child reports up to its parent agent.
+
+        If the sender has no parent, the message is logged but not delivered.
+        """
+        sender = self.get_agent(sender_id)
+        if not sender:
+            return {"success": False, "error": f"sender not found: {sender_id}"}
+        if not sender.parent_id:
+            return {"success": False, "error": f"{sender_id} has no parent to report to"}
+
+        parent = self.get_agent(sender.parent_id)
+        if not parent:
+            return {"success": False, "error": f"parent {sender.parent_id} not found"}
+
+        msg = A2AMessage(
+            sender=sender_id,
+            recipient=sender.parent_id,
+            content=content,
+            msg_type="report",
+            keywords=keywords or [],
+        )
+        result = self.route_message(msg)
+        result["success"] = "error" not in result
+        result["action"] = "report"
+        result["parent_id"] = sender.parent_id
+        return result
+
+    def escalate(self, sender_id: str, content: str,
+                 keywords: list[str] | None = None) -> dict[str, Any]:
+        """Escalate a message to the grandparent (skip one level).
+
+        If the sender's parent has no parent, falls back to reporting to parent.
+        """
+        sender = self.get_agent(sender_id)
+        if not sender or not sender.parent_id:
+            return {"success": False, "error": "cannot escalate: no parent chain"}
+
+        parent = self.get_agent(sender.parent_id)
+        if not parent or not parent.parent_id:
+            # No grandparent — just report to parent
+            return self.report(sender_id, content, keywords)
+
+        msg = A2AMessage(
+            sender=sender_id,
+            recipient=parent.parent_id,
+            content=content,
+            msg_type="escalate",
+            keywords=keywords or [],
+        )
+        result = self.route_message(msg)
+        result["success"] = "error" not in result
+        result["action"] = "escalate"
+        result["escalated_to"] = parent.parent_id
+        return result
+
+    def broadcast_down(self, sender_id: str, content: str,
+                       keywords: list[str] | None = None) -> dict[str, Any]:
+        """Broadcast a message to all descendants of the sender."""
+        descendants = self.get_descendants(sender_id)
+        if not descendants:
+            return {"success": True, "message_id": "", "delivered_to": 0,
+                    "results": [], "action": "broadcast_down"}
+
+        msg = A2AMessage(
+            sender=sender_id,
+            recipient="*",
+            content=content,
+            msg_type="broadcast_down",
+            keywords=keywords or [],
+        )
+
+        # Log the message
+        with self._lock:
+            entry = asdict(msg)
+            self._message_log.append(entry)
+            if len(self._message_log) > self._max_log:
+                self._message_log = self._message_log[-self._max_log:]
+
+        results = []
+        for target in descendants:
+            result = self._deliver(target, msg)
+            results.append({"agent_id": target.id, "result": result})
+
+        response = {
+            "success": True,
+            "message_id": msg.id,
+            "action": "broadcast_down",
+            "delivered_to": len(results),
+            "results": results,
+        }
+
+        if self._webhook_fire:
+            try:
+                self._webhook_fire("a2a.broadcast_down", response)
+            except Exception:
+                pass
+        return response
+
+    def broadcast_up(self, sender_id: str, content: str,
+                     keywords: list[str] | None = None) -> dict[str, Any]:
+        """Broadcast a message to all ancestors of the sender."""
+        ancestors = self.get_ancestors(sender_id)
+        if not ancestors:
+            return {"success": True, "message_id": "", "delivered_to": 0,
+                    "results": [], "action": "broadcast_up"}
+
+        msg = A2AMessage(
+            sender=sender_id,
+            recipient="*",
+            content=content,
+            msg_type="broadcast_up",
+            keywords=keywords or [],
+        )
+
+        with self._lock:
+            entry = asdict(msg)
+            self._message_log.append(entry)
+            if len(self._message_log) > self._max_log:
+                self._message_log = self._message_log[-self._max_log:]
+
+        results = []
+        for target in ancestors:
+            result = self._deliver(target, msg)
+            results.append({"agent_id": target.id, "result": result})
+
+        response = {
+            "success": True,
+            "message_id": msg.id,
+            "action": "broadcast_up",
+            "delivered_to": len(results),
+            "results": results,
+        }
+
+        if self._webhook_fire:
+            try:
+                self._webhook_fire("a2a.broadcast_up", response)
+            except Exception:
+                pass
+        return response
+
     def _deliver(self, agent: Agent, message: A2AMessage) -> dict[str, Any]:
         """Deliver a message to an agent via HTTP or in-process."""
         if agent.endpoint:
@@ -234,7 +480,11 @@ class A2ARouter:
     # --- fleet loading ---------------------------------------------------
 
     def load_hub_agents(self) -> int:
-        """Load agents from the agent-hub-state.json file."""
+        """Load agents from the agent-hub-state.json file.
+
+        Agents with ':' in their id (e.g. 'dr-agent:local-recovery') are
+        automatically assigned a parent based on the prefix.
+        """
         if not HUB_STATE_FILE.exists():
             logger.warning("hub state file not found: %s", HUB_STATE_FILE)
             return 0
@@ -245,12 +495,20 @@ class A2ARouter:
             for agent_id, agent_data in data.get("agents", {}).items():
                 status = agent_data.get("status", "unknown")
                 keywords = self._infer_keywords(agent_id)
+                # Detect hierarchy from ':' notation
+                parent_id = None
+                level = 1  # default managers
+                if ":" in agent_id:
+                    parent_id = agent_id.split(":")[0]
+                    level = 2  # workers
                 agent = Agent(
                     id=agent_id,
-                    name=agent_id.replace("-", " ").title(),
+                    name=agent_id.replace("-", " ").replace(":", " → ").title(),
                     agent_type="hub",
                     status=status,
                     keywords=keywords,
+                    parent_id=parent_id,
+                    level=level,
                 )
                 self.register_agent(agent)
                 count += 1
@@ -260,10 +518,33 @@ class A2ARouter:
         return count
 
     def load_fleet_agents(self) -> int:
-        """Load agents from the MasterRecoveryAgents config."""
+        """Load agents from the MasterRecoveryAgents config.
+
+        Fleet agents are assigned to manager parents based on their role:
+        - Recovery specialists (seed_finder, researcher, etc.) → dr-agent
+        - Analysts (gemini_analyst, gdrive_analyst) → overseer
+        - Others → vertex-orchestrator
+        """
         if not FLEET_CONFIG_FILE.exists():
             logger.warning("fleet config not found: %s", FLEET_CONFIG_FILE)
             return 0
+
+        # Map fleet agents to parent managers by keyword
+        recovery_specs = {
+            "seed_finder", "passphrase_mutator", "researcher",
+            "electrum_expert", "trezor_expert", "blockchain_monitor",
+            "log_analyzer", "bitlocker_explorer", "bitlocker_context",
+            "vertex_recovery", "claude_reasoner",
+        }
+        analytics_specs = {
+            "project_manager", "worker_agent", "gemini_analyst",
+            "gdrive_analyst", "message_broker", "communication_daemon",
+            "announcement_relay",
+        }
+        code_tools = {
+            "aider_debug", "openrouter_llm", "blackbox", "opencode_runner",
+            "ollama_runner",
+        }
 
         count = 0
         try:
@@ -272,6 +553,19 @@ class A2ARouter:
                 purpose = agent_data.get("purpose", "")
                 model = agent_data.get("model", "")
                 keywords = self._extract_keywords_from_purpose(purpose, agent_id)
+                # Assign parent based on role
+                if agent_id in recovery_specs:
+                    parent_id = "dr-agent"
+                    level = 2
+                elif agent_id in analytics_specs:
+                    parent_id = "overseer"
+                    level = 2
+                elif agent_id in code_tools:
+                    parent_id = "hermes"
+                    level = 2
+                else:
+                    parent_id = "vertex-orchestrator"
+                    level = 2
                 agent = Agent(
                     id=f"fleet:{agent_id}",
                     name=agent_id.replace("_", " ").title(),
@@ -281,6 +575,8 @@ class A2ARouter:
                     capabilities=[model] if model else [],
                     metadata={"script": agent_data.get("script", ""),
                               "provider": agent_data.get("provider", "")},
+                    parent_id=parent_id,
+                    level=level,
                 )
                 self.register_agent(agent)
                 count += 1
@@ -290,8 +586,36 @@ class A2ARouter:
         return count
 
     def register_service_agents(self) -> int:
-        """Register managed service agents (overseer, culina, etc.)."""
+        """Register managed service agents (overseer, culina, etc.).
+
+        Hierarchy:
+          Level 0 (Supreme): vertex-orchestrator
+          Level 1 (Managers): dr-agent, overseer, culina, openclaw, hermes, ollama-router
+          Level 2 (Workers): cline, gdpr-compliance
+        """
         services = [
+            Agent(
+                id="vertex-orchestrator",
+                name="Vertex Orchestrator",
+                agent_type="service",
+                keywords=["orchestrate", "execute", "batch", "fallback",
+                          "webhook", "a2a", "deploy", "monitor"],
+                endpoint="http://localhost:8000",
+                capabilities=["rest-api", "mcp-server", "webhook-pubsub",
+                              "a2a-routing", "fallback-chain"],
+                level=0,  # Supreme
+            ),
+            Agent(
+                id="dr-agent",
+                name="DR Agent",
+                agent_type="hub",
+                keywords=["dr", "disaster-recovery", "cloud-run", "health",
+                          "alert", "monitor", "security"],
+                endpoint=None,
+                capabilities=["cloud-run-monitoring", "health-checks"],
+                parent_id="vertex-orchestrator",
+                level=1,
+            ),
             Agent(
                 id="overseer",
                 name="Recovery Overseer (Spark Studio)",
@@ -301,6 +625,8 @@ class A2ARouter:
                           "data-explorer", "dag", "cluster"],
                 endpoint="http://localhost:3000/api/mcp",
                 capabilities=["mcp-jsonrpc", "google-workspace", "spark-engine"],
+                parent_id="vertex-orchestrator",
+                level=1,
             ),
             Agent(
                 id="culina",
@@ -312,16 +638,8 @@ class A2ARouter:
                 endpoint="http://localhost:3001/api",
                 capabilities=["gemini-ai", "websocket", "firebase", "postgresql",
                               "google-workspace", "veo-video"],
-            ),
-            Agent(
-                id="vertex-orchestrator",
-                name="Vertex Orchestrator",
-                agent_type="service",
-                keywords=["orchestrate", "execute", "batch", "fallback",
-                          "webhook", "a2a", "deploy", "monitor"],
-                endpoint="http://localhost:8000",
-                capabilities=["rest-api", "mcp-server", "webhook-pubsub",
-                              "a2a-routing", "fallback-chain"],
+                parent_id="vertex-orchestrator",
+                level=1,
             ),
             Agent(
                 id="openclaw",
@@ -330,6 +648,8 @@ class A2ARouter:
                 keywords=["telegram", "gateway", "bot", "message", "notify"],
                 endpoint="http://localhost:18789",
                 capabilities=["telegram-bot", "websocket"],
+                parent_id="vertex-orchestrator",
+                level=1,
             ),
             Agent(
                 id="hermes",
@@ -338,6 +658,8 @@ class A2ARouter:
                 keywords=["hermes", "acp", "tool-calling", "reasoning",
                           "compression", "context"],
                 capabilities=["acp-protocol", "tool-calling", "context-compression"],
+                parent_id="vertex-orchestrator",
+                level=1,
             ),
             Agent(
                 id="ollama-router",
@@ -347,6 +669,8 @@ class A2ARouter:
                           "kimi", "fallback", "llm"],
                 endpoint="http://127.0.0.1:11434",
                 capabilities=["llm-inference", "model-routing"],
+                parent_id="vertex-orchestrator",
+                level=1,
             ),
             Agent(
                 id="cline",
@@ -355,6 +679,53 @@ class A2ARouter:
                 keywords=["cline", "code", "edit", "refactor", "build",
                           "test", "typescript"],
                 capabilities=["code-editing", "plan-mode", "thinking"],
+                parent_id="hermes",
+                level=2,
+            ),
+            Agent(
+                id="compliance-legal",
+                name="Compliance Legal",
+                agent_type="hub",
+                keywords=["compliance", "legal", "audit", "gdpr",
+                          "policy", "regulation"],
+                parent_id="vertex-orchestrator",
+                level=1,
+            ),
+            Agent(
+                id="gdpr-compliance",
+                name="GDPR Compliance",
+                agent_type="hub",
+                keywords=["gdpr", "privacy", "data-protection", "consent"],
+                parent_id="compliance-legal",
+                level=2,
+            ),
+            Agent(
+                id="backup",
+                name="Backup Agent",
+                agent_type="hub",
+                keywords=["backup", "restore", "snapshot", "archive"],
+                parent_id="vertex-orchestrator",
+                level=1,
+            ),
+            Agent(
+                id="git-profiles",
+                name="Git Profiles",
+                agent_type="hub",
+                keywords=["git", "profile", "commit", "repo", "github"],
+                parent_id="vertex-orchestrator",
+                level=1,
+            ),
+            Agent(
+                id="agents-cli",
+                name="Google Agents CLI",
+                agent_type="service",
+                keywords=["agents-cli", "scaffold", "create", "deploy", "eval",
+                          "publish", "playground", "adk", "agent-runtime",
+                          "cloud-run-deploy", "lint", "google-adk"],
+                capabilities=["scaffold", "deploy", "eval", "publish", "run",
+                              "playground", "lint", "a2a-card"],
+                parent_id="vertex-orchestrator",
+                level=1,
             ),
         ]
         count = 0
