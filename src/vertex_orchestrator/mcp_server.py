@@ -171,6 +171,62 @@ TOOLS: list[dict[str, Any]] = [
         "description": "List all registered webhook callbacks.",
         "inputSchema": {"type": "object", "properties": {}},
     },
+    {
+        "name": "a2a_list_agents",
+        "description": "List all registered A2A agents in the routing harness (hub agents, fleet agents, managed services, external agents).",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "a2a_route",
+        "description": "Route a message to agents matching the given keywords. The router finds all agents whose keywords match and delivers the message.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "sender": {"type": "string", "description": "ID of the sending agent"},
+                "keywords": {"type": "array", "items": {"type": "string"}, "description": "Keywords to route by"},
+                "content": {"type": "string", "description": "Message content to deliver"},
+            },
+            "required": ["keywords", "content"],
+        },
+    },
+    {
+        "name": "a2a_send",
+        "description": "Send a message directly to a specific A2A agent by ID.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "sender": {"type": "string", "description": "ID of the sending agent"},
+                "recipient": {"type": "string", "description": "ID of the target agent"},
+                "content": {"type": "string", "description": "Message content to deliver"},
+            },
+            "required": ["recipient", "content"],
+        },
+    },
+    {
+        "name": "a2a_messages",
+        "description": "Get recent A2A message log.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "limit": {"type": "integer", "description": "Max messages to return (default 50)"},
+            },
+        },
+    },
+    {
+        "name": "culina_status",
+        "description": "Check if the Culina AI Studio Orchestrator service is running.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "culina_start",
+        "description": "Start the Culina AI Studio Orchestrator service (Node.js on port 3001).",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "culina_stop",
+        "description": "Stop the Culina AI Studio Orchestrator service.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
 ]
 
 RESOURCES: list[dict[str, Any]] = [
@@ -268,6 +324,21 @@ def dispatch_tool(name: str, args: dict[str, Any]) -> dict[str, Any]:
         return _post("/webhooks/unregister", args)
     elif name == "webhook_list":
         return _get("/webhooks")
+    elif name == "a2a_list_agents":
+        return _get("/a2a/agents")
+    elif name == "a2a_route":
+        return _post("/a2a/route", args)
+    elif name == "a2a_send":
+        return _post("/a2a/send", args)
+    elif name == "a2a_messages":
+        limit = args.get("limit", 50)
+        return _get(f"/a2a/messages?limit={limit}")
+    elif name == "culina_status":
+        return _get("/culina/status")
+    elif name == "culina_start":
+        return _post("/culina/start", {})
+    elif name == "culina_stop":
+        return _post("/culina/stop", {})
     else:
         return {"success": False, "error": f"Unknown tool: {name}"}
 

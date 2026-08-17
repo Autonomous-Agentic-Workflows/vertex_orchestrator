@@ -18,6 +18,17 @@ Endpoints:
   POST /webhooks/register   — register a callback URL for event notifications
   POST /webhooks/unregister — remove a registered callback URL
   GET  /recovery/*      — recovery integration endpoints
+  GET  /a2a/agents      — list all registered A2A agents
+  GET  /a2a/messages    — recent A2A message log
+  POST /a2a/route       — route a message by keyword(s)
+  POST /a2a/send        — send a message to a specific agent
+  POST /a2a/broadcast   — broadcast to all matching agents
+  POST /a2a/register    — register a new A2A agent
+  POST /a2a/unregister  — unregister an A2A agent
+  GET  /culina/status   — culina-ai service status
+  POST /culina/start    — start culina-ai service
+  POST /culina/stop     — stop culina-ai service
+  POST /culina/proxy/*  — proxy to culina-ai API
 """
 from __future__ import annotations
 
@@ -200,6 +211,23 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             result = ri.load_targets(include_sensitive=include_sensitive)
             status = 200 if result.get("success") else 404
             self._send_json(status, result)
+        elif path == "/a2a/agents":
+            from vertex_orchestrator.a2a_router import get_router
+            router = get_router()
+            self._send_json(200, {"agents": router.list_agents()})
+        elif path == "/a2a/messages":
+            from vertex_orchestrator.a2a_router import get_router
+            router = get_router()
+            limit = int(query_params.get("limit", "50"))
+            self._send_json(200, {"messages": router.get_message_log(limit=limit)})
+        elif path == "/culina/status":
+            from vertex_orchestrator.culina_manager import get_culina
+            culina = get_culina()
+            self._send_json(200, {
+                "running": culina.is_running(),
+                "port": culina.port,
+                "health": culina.check_health() if culina.is_running() else None,
+            })
         else:
             self._send_json(404, {"error": "not found"})
 
@@ -207,6 +235,132 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
         body = self._read_body()
+
+        # A2A routes don't need VertexAI config
+        if path == "/a2a/route":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.a2a_router import get_router, A2AMessage
+            router = get_router()
+            sender = body.get("sender", "external")
+            keywords = body.get("keywords", [])
+            content = body.get("content", "")
+            if not content or not keywords:
+                self._send_json(400, {"success": False, "error": "content and keywords are required"})
+                return
+            msg = A2AMessage(sender=sender, recipient="*", content=content, msg_type="broadcast", keywords=keywords)
+            result = router.route_message(msg)
+            self._send_json(200, {"success": True, **result})
+            _fire_webhooks("a2a.route", result)
+            return
+
+        if path == "/a2a/send":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.a2a_router import get_router, A2AMessage
+            router = get_router()
+            sender = body.get("sender", "external")
+            recipient = body.get("recipient", "")
+            content = body.get("content", "")
+            if not content or not recipient:
+                self._send_json(400, {"success": False, "error": "content and recipient are required"})
+                return
+            msg = A2AMessage(sender=sender, recipient=recipient, content=content,
+                             msg_type="request", keywords=body.get("keywords", []))
+            result = router.route_message(msg)
+            self._send_json(200, {"success": True, **result})
+            _fire_webhooks("a2a.send", result)
+            return
+
+        if path == "/a2a/broadcast":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.a2a_router import get_router, A2AMessage
+            router = get_router()
+            sender = body.get("sender", "external")
+            content = body.get("content", "")
+            if not content:
+                self._send_json(400, {"success": False, "error": "content is required"})
+                return
+            msg = A2AMessage(sender=sender, recipient="*", content=content,
+                             msg_type="broadcast", keywords=body.get("keywords", []))
+            result = router.route_message(msg)
+            self._send_json(200, {"success": True, **result})
+            _fire_webhooks("a2a.broadcast", result)
+            return
+
+        if path == "/a2a/register":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.a2a_router import get_router, Agent
+            router = get_router()
+            agent_id = body.get("id", "")
+            if not agent_id:
+                self._send_json(400, {"success": False, "error": "id is required"})
+                return
+            agent = Agent(
+                id=agent_id,
+                name=body.get("name", agent_id),
+                agent_type=body.get("agent_type", "external"),
+                keywords=body.get("keywords", []),
+                endpoint=body.get("endpoint"),
+                capabilities=body.get("capabilities", []),
+                metadata=body.get("metadata", {}),
+            )
+            result = router.register_agent(agent)
+            self._send_json(200, {"success": True, **result})
+            return
+
+        if path == "/a2a/unregister":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.a2a_router import get_router
+            router = get_router()
+            agent_id = body.get("id", "")
+            result = router.unregister_agent(agent_id)
+            status = 200 if result["status"] == "unregistered" else 404
+            self._send_json(status, {"success": result["status"] == "unregistered", **result})
+            return
+
+        # Culina service routes don't need VertexAI config
+        if path == "/culina/start":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.culina_manager import get_culina
+            culina = get_culina()
+            result = culina.start()
+            self._send_json(200, result)
+            return
+
+        if path == "/culina/stop":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.culina_manager import get_culina
+            culina = get_culina()
+            result = culina.stop()
+            self._send_json(200, result)
+            return
+
+        if path.startswith("/culina/proxy/"):
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            from vertex_orchestrator.culina_manager import get_culina
+            culina = get_culina()
+            if not culina.is_running():
+                self._send_json(503, {"success": False, "error": "culina not running — POST /culina/start first"})
+                return
+            culina_path = "/" + path[len("/culina/proxy/"):]
+            result = culina.proxy_request("POST", culina_path, body)
+            self._send_json(200, result)
+            return
 
         # Webhook routes don't need VertexAI config
         if path == "/webhooks/register":
@@ -468,7 +622,7 @@ def run_server(host: str = "0.0.0.0", port: int = 8000) -> None:
     print(f"  Auth: {'ENABLED (ORCHESTRATOR_API_KEY set)' if os.environ.get('ORCHESTRATOR_API_KEY') else 'OPEN (no key set — local dev only)'}")
     print(f"  Fallback: {'ENABLED' if fallback_enabled else 'DISABLED'} (Ollama at 127.0.0.1:11434)")
     print(f"  File access: restricted to {os.environ.get('ORCHESTRATOR_ALLOWED_BASE', '<ConsolidatedDevelopment>')}")
-    print(f"  Endpoints: /health, /fallback/status, /execute, /batch, /providers, /recovery/*, /overseer/*, /cline/execute, /webhooks/*")
+    print(f"  Endpoints: /health, /fallback/status, /execute, /batch, /providers, /recovery/*, /overseer/*, /culina/*, /cline/execute, /webhooks/*, /a2a/*")
     print(f"  Press Ctrl+C to stop")
     try:
         server.serve_forever()

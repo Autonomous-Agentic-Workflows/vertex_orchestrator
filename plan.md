@@ -17,6 +17,10 @@
 | 8 | API key rotation | P1 | ✅ | Secure key in .env, "test-key" replaced |
 | 9 | DevGate Android bridge verify | P2 | 📋 | Mobile app → orchestrator connectivity |
 | 10 | 208 Fence & Gate tool deploy | P3 | 📋 | WebMCP agentic forms deployment |
+| 11 | A2A routing harness | P1 | ✅ | 32 agents, keyword routing, 7 endpoints, 8 MCP tools |
+| 12 | Recovery Overseer integration | P1 | ✅ | 492 deps installed, .env.local, OverseerManager |
+| 13 | Culina AI integration | P1 | ✅ | 310 deps installed, CulinaManager, port 3001 |
+| 14 | Mobile Device evidence catalog | P2 | ✅ | 103 photos cataloged + symlinked to photo-clues |
 
 ## Pending Actions Status (2026-08-16)
 
@@ -28,6 +32,8 @@
 | Set up Telegram for Hermes | ✅ Done | OpenClaw gateway running on :18789, @gemmagitsclawd_bot live |
 | Release cadence | ✅ Done | GitHub Actions release.yml + monthly-release.yml, ~/docs/RELEASE-CADENCE.md |
 | Clean up 208DevOps | 📋 Planned | 0 repos — recommend repurpose for 208 Fence & Gate |
+| Set GEMINI_API_KEY | 📋 Planned | Needed for both AI Studio applets (overseer + culina) |
+| Set up PostgreSQL for culina-ai | 📋 Planned | docker-compose or local install for culina enterprise DB |
 
 ## Detailed Plans
 
@@ -84,3 +90,52 @@ Test /health, /execute, /recovery/status endpoints from Android.
 ### 10. 208 Fence & Gate Tool (P3)
 Deploy fence estimate tool with WebMCP agentic forms attributes.
 Uses ADC: admin@208fenceandgate.com.
+
+### 11. A2A Routing Harness (P1)
+Unified agent-to-agent message bus connecting the Agent Hub (10 monitor
+agents), MasterRecoveryAgents fleet (15+ recovery agents), managed
+services (overseer, culina, vertex), and external agents (hermes,
+openclaw, cline, ollama-router).
+
+**Implementation**: `src/vertex_orchestrator/a2a_router.py`
+- A2ARouter with keyword-based message routing
+- Agent registry: 32 agents loaded at startup (hub + fleet + service)
+- Message delivery: HTTP endpoint POST or in-process queue
+- Message log: last 500 messages tracked
+- Webhook integration: fires `a2a.message` events
+- REST endpoints: /a2a/agents, /a2a/route, /a2a/send, /a2a/broadcast,
+  /a2a/register, /a2a/unregister, /a2a/messages
+- MCP tools: a2a_list_agents, a2a_route, a2a_send, a2a_messages
+- 27 tests in test_a2a_router.py (139 total pass)
+
+### 12. Recovery Overseer Integration (P1)
+Synced recovery-overseer (Spark Analytics Studio) from Windows Downloads.
+Already managed by OverseerManager in vertex_orchestrator.
+
+**Actions taken**:
+- Verified files match Downloads version (no diff)
+- Installed 492 npm packages (node v20, npm v10.9.8)
+- Created .env.local with GEMINI_API_KEY placeholder
+- OverseerManager starts/stops/proxies on port 3000
+
+### 13. Culina AI Integration (P1)
+New project — Culina AI Studio Orchestrator (enterprise recovery +
+legacy contact management + Google Keep + Gemini AI + Veo video).
+
+**Implementation**: `src/vertex_orchestrator/culina_manager.py`
+- CulinaProcess manages Node.js subprocess (mirrors OverseerManager)
+- Port 3001 (offset from overseer's 3000)
+- REST endpoints: /culina/status, /culina/start, /culina/stop, /culina/proxy/*
+- MCP tools: culina_status, culina_start, culina_stop
+- 310 npm packages installed, .env.local created
+- Enterprise domain: 208fenceandgate.com
+- GCP project: xenon-lantern-494206-u4
+
+### 14. Mobile Device Evidence Catalog (P2)
+103 phone photos (61.6MB) from Windows Downloads cataloged as recovery
+evidence.
+
+**Actions taken**:
+- Created manifest.json with file sizes and metadata
+- Symlinked all photos to /home/conor-ops/photo-clues/mobile-devices/
+- Noted duplicate recovery-overseer copy inside Mobile Devices dir
