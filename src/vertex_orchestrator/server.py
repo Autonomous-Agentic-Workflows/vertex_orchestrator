@@ -138,7 +138,22 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
         path = parsed.path
         query_params = {k: v[0] for k, v in parse_qs(parsed.query).items()}
 
-        if path == "/health":
+        if path in ("/", "/dashboard"):
+            static_html = os.path.join(os.path.dirname(__file__), "static", "index.html")
+            if os.path.exists(static_html):
+                with open(static_html, "rb") as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self._send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content)
+                return
+            self._send_json(200, {"status": "Vertex Orchestrator running", "endpoints": ["/health", "/fallback/status", "/a2a/agents"]})
+            return
+
+        elif path == "/health":
             fallback_enabled = os.environ.get(
                 "ORCHESTRATOR_FALLBACK", "true"
             ).lower() in ("true", "1", "yes")
