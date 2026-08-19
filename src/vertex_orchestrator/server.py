@@ -51,6 +51,7 @@ import json
 import os
 import threading
 import urllib.request
+import urllib.error
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -201,6 +202,23 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
         elif path == "/providers":
             self._send_json(200, {
                 "providers": [
+                    {
+                        "name": "vertex_ai",
+                        "models": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-1.5-pro"],
+                        "project": os.environ.get("GOOGLE_CLOUD_PROJECT", "master-recovery-hub-2026"),
+                    },
+                    {
+                        "name": "openrouter",
+                        "models": [
+                            "google/gemma-4-31b-it:free",
+                            "anthropic/claude-sonnet-4.5",
+                            "deepseek/deepseek-r1",
+                            "deepseek/deepseek-chat",
+                            "meta-llama/llama-3.3-70b-instruct",
+                            "google/gemini-2.5-flash",
+                        ],
+                        "active": bool(os.environ.get("OPENROUTER_API_KEY")),
+                    },
                     {"name": "crewai", "task_type": "ANALYSIS", "models": ["gemini-2.5-pro", "gemini-2.5-flash"]},
                     {"name": "autogen", "task_type": "CONVERSATION", "models": ["gemini-2.5-pro"]},
                     {"name": "aider", "task_type": "EDIT", "models": ["vertex_ai/gemini-2.5-pro"]},
@@ -630,6 +648,111 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             else:
                 self._send_json(404, {"success": False, "url": url, "error": "webhook not found"})
             return
+
+        if path in ("/ai/generate", "/api/v1/ai/generate"):
+            prompt = body.get("prompt", "")
+            system_instruction = body.get("system_instruction", "You are an expert AI assistant for ContractorOS and Vertex Orchestrator.")
+            provider = body.get("provider", "openrouter" if os.environ.get("OPENROUTER_API_KEY") else "vertex_ai")
+            model = body.get("model", "google/gemma-4-31b-it:free" if provider == "openrouter" else "gemini-2.5-flash")
+
+            if not prompt:
+                self._send_json(400, {"success": False, "error": "prompt is required"})
+                return
+
+            if provider == "openrouter":
+                api_key = os.environ.get("OPENROUTER_API_KEY", "")
+                if not api_key:
+                    for env_path in ["/home/conor-ops/.env", os.path.expanduser("~/.env"), ".env"]:
+                        if os.path.exists(env_path):
+                            with open(env_path, "r") as ef:
+                                for line in ef:
+                                    if line.startswith("OPENROUTER_API_KEY="):
+                                        api_key = line.strip().split("=", 1)[1].strip('"\'')
+                                        break
+                        if api_key:
+                            break
+                if not api_key:
+                    self._send_json(400, {"success": False, "error": "OPENROUTER_API_KEY is not set"})
+                    return
+
+                req_payload = {
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": system_instruction},
+                        {"role": "user", "content": prompt},
+                    ],
+                    "temperature": body.get("temperature", 0.2),
+                }
+                headers = {
+                    "Authorization": f"Bearer {api_key}",
+                    "HTTP-Referer": "https://208fenceandgate.com",
+                    "X-Title": "ContractorOS-VertexOrchestrator",
+                    "Content-Type": "application/json",
+                }
+                req = urllib.request.Request(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    data=json.dumps(req_payload).encode("utf-8"),
+                    headers=headers,
+                    method="POST",
+                )
+                try:
+                    with urllib.request.urlopen(req, timeout=45) as resp:
+                        res_data = json.loads(resp.read().decode("utf-8"))
+                        content = ""
+                        choices = res_data.get("choices", [])
+                        if choices:
+                            content = choices[0].get("message", {}).get("content", "")
+                        self._send_json(200, {
+                            "success": True,
+                            "provider": "openrouter",
+                            "model": model,
+                            "content": content,
+                            "raw": res_data,
+                            "usage": res_data.get("usage", {}),
+                        })
+                        return
+                except urllib.error.HTTPError as e:
+                    err_msg = e.read().decode("utf-8") if e.fp else str(e)
+                    self._send_json(e.code, {"success": False, "error": f"OpenRouter error ({e.code}): {err_msg}"})
+                    return
+                except Exception as e:
+                    self._send_json(500, {"success": False, "error": f"OpenRouter connection error: {str(e)}"})
+                    return
+
+            elif provider in ("ollama", "local"):
+                try:
+                    ollama_model = model if model not in ("google/gemma-4-31b-it:free", "gemini-2.5-flash") else "gemma4:26b"
+                    ollama_payload = {
+                        "model": ollama_model,
+                        "messages": [
+                            {"role": "system", "content": system_instruction},
+                            {"role": "user", "content": prompt},
+                        ],
+                        "stream": False,
+                    }
+                    req = urllib.request.Request(
+                        "http://127.0.0.1:11434/api/chat",
+                        data=json.dumps(ollama_payload).encode("utf-8"),
+                        headers={"Content-Type": "application/json"},
+                        method="POST",
+                    )
+                    with urllib.request.urlopen(req, timeout=45) as resp:
+                        res_data = json.loads(resp.read().decode("utf-8"))
+                        content = res_data.get("message", {}).get("content", "")
+                        self._send_json(200, {
+                            "success": True,
+                            "provider": "ollama",
+                            "model": ollama_model,
+                            "content": content,
+                        })
+                        return
+                except Exception as e:
+                    self._send_json(500, {"success": False, "error": f"Ollama error: {str(e)}"})
+                    return
+            else:
+                self._send_json(400, {"success": False, "error": f"Unknown provider: {provider}"})
+                return
+
 
         # Build config from environment
         project_id = os.environ.get("GOOGLE_CLOUD_PROJECT", body.get("project_id", ""))

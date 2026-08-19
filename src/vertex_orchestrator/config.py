@@ -1,11 +1,7 @@
-"""Vertex AI configuration for enterprise Google Cloud connections.
-
-Also provides ``OllamaConfig`` — a local fallback configuration that
-mirrors the Vertex AI config but routes requests to a local Ollama
-instance when Vertex AI is unavailable or rate-limited.
-"""
+"""Vertex AI, Ollama fallback, and OpenRouter configuration for enterprise agent connections."""
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 
 
@@ -70,10 +66,6 @@ class OllamaConfig:
 
     endpoint: str = "127.0.0.1:11434"
     temperature: float = 0.2
-    # Maps the string value of TaskType to a local Ollama model name.
-    # ANALYSIS -> gemma4:31b (larger model for structured analysis)
-    # CONVERSATION -> gemma4:26b (balanced for multi-turn dialogue)
-    # EDIT -> gemma4:26b (balanced for code editing)
     model_mapping: dict = field(default_factory=lambda: {
         "analysis": "gemma4:31b",
         "conversation": "gemma4:26b",
@@ -88,11 +80,7 @@ class OllamaConfig:
 
     @classmethod
     def from_vertex_config(cls, vertex_config: VertexAIConfig) -> "OllamaConfig":
-        """Build an OllamaConfig that mirrors a VertexAIConfig's settings.
-
-        Inherits ``temperature`` from the Vertex config and uses the
-        default local endpoint and model mapping.
-        """
+        """Build an OllamaConfig that mirrors a VertexAIConfig's settings."""
         return cls(
             temperature=vertex_config.temperature,
         )
@@ -110,7 +98,6 @@ class OllamaConfig:
     @property
     def api_base(self) -> str:
         """The Ollama OpenAI-compatible API base URL."""
-        # Ensure scheme present
         ep = self.endpoint
         if not ep.startswith("http://") and not ep.startswith("https://"):
             ep = f"http://{ep}"
@@ -120,3 +107,51 @@ class OllamaConfig:
     def litellm_model_prefix(self) -> str:
         """The litellm model prefix for Ollama (``ollama/``)."""
         return "ollama"
+
+
+@dataclass
+class OpenRouterConfig:
+    """Configuration for routing agent requests through OpenRouter.
+
+    Provides access to hundreds of models (Claude 3.5 Sonnet, DeepSeek R1/V3,
+    Llama 3.3, Gemini 2.5) via OpenAI-compatible endpoints with automated
+    load balancing and fallback.
+    """
+
+    api_key: str = field(default_factory=lambda: os.environ.get("OPENROUTER_API_KEY", ""))
+    base_url: str = "https://openrouter.ai/api/v1"
+    model: str = "google/gemma-4-31b-it:free"
+    site_url: str = "https://208fenceandgate.com"
+    app_name: str = "ContractorOS-VertexOrchestrator"
+    temperature: float = 0.2
+
+    @property
+    def headers(self) -> dict[str, str]:
+        """Headers required by OpenRouter for ranking and attribution."""
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "HTTP-Referer": self.site_url,
+            "X-Title": self.app_name,
+            "Content-Type": "application/json",
+        }
+        return headers
+
+    @property
+    def crewai_model_string(self) -> str:
+        """Model string formatted for CrewAI's OpenAI-compatible router."""
+        return f"openrouter/{self.model}"
+
+    @property
+    def aider_model_string(self) -> str:
+        """Model string formatted for Aider CLI via OpenRouter."""
+        return f"openrouter/{self.model}"
+
+    @property
+    def autogen_config_entry(self) -> dict:
+        """Config dict for AutoGen config_list pointing to OpenRouter."""
+        return {
+            "model": self.model,
+            "base_url": self.base_url,
+            "api_key": self.api_key,
+            "api_type": "openai",
+        }

@@ -3,234 +3,174 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vertex Orchestrator | Autonomous Agent Mission Control</title>
+  <title>Vertex Orchestrator — Mission Control</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #090d14;
-      --surface: #111722;
-      --surface-elevated: #18202f;
-      --surface-subtle: #0d121c;
-      --border: #1f2a3e;
+      --bg-base: #090d16;
+      --bg-surface: #0f172a;
+      --bg-card: #131d33;
+      --bg-card-hover: #18243f;
+      --border: #1e293b;
       --border-focus: #3b82f6;
-      --text: #f8fafc;
+      --text-main: #f1f5f9;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
-      --accent: #3b82f6;
-      --accent-hover: #2563eb;
-      --accent-light: rgba(59, 130, 246, 0.12);
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --radius-sm: 6px;
-      --radius-md: 10px;
-      --radius-lg: 14px;
-      --font-main: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      --accent-blue: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-orange: #fb923c;
+      --accent-purple: #8b5cf6;
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
     }
 
-    [data-theme="cyber"] {
-      --bg: #050811;
-      --surface: #0a1120;
-      --surface-elevated: #101c33;
-      --surface-subtle: #070d18;
-      --border: #1a2e54;
-      --border-focus: #06b6d4;
-      --accent: #06b6d4;
-      --accent-hover: #0891b2;
-      --accent-light: rgba(6, 182, 212, 0.12);
-    }
-
-    [data-theme="light"] {
-      --bg: #f8fafc;
-      --surface: #ffffff;
-      --surface-elevated: #f1f5f9;
-      --surface-subtle: #f8fafc;
-      --border: #e2e8f0;
-      --border-focus: #2563eb;
-      --text: #0f172a;
-      --text-muted: #475569;
-      --text-dim: #94a3b8;
-      --accent: #2563eb;
-      --accent-hover: #1d4ed8;
-      --accent-light: rgba(37, 99, 235, 0.08);
-    }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: var(--font-main);
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-sans);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      line-height: 1.5;
     }
 
-    /* Top Command Header */
     header {
-      background-color: var(--surface);
+      background: var(--bg-surface);
       border-bottom: 1px solid var(--border);
-      padding: 0.875rem 2rem;
+      padding: 16px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 40;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 12px;
     }
 
-    .brand-badge {
-      background: var(--accent-light);
-      color: var(--accent);
-      border: 1px solid var(--accent);
-      padding: 0.25rem 0.6rem;
-      font-size: 0.75rem;
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-weight: 700;
-      border-radius: var(--radius-sm);
-      letter-spacing: 0.05em;
+      color: #fff;
     }
 
     .brand-title {
-      font-size: 1.05rem;
+      font-size: 1.1rem;
       font-weight: 700;
-      letter-spacing: -0.01em;
+      letter-spacing: -0.02em;
     }
 
-    .telemetry-pills {
-      display: flex;
-      gap: 0.75rem;
-    }
-
-    .pill {
-      display: flex;
+    .badge-status {
+      display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
-      font-size: 0.8rem;
-      background: var(--surface-subtle);
-      border: 1px solid var(--border);
-      padding: 0.35rem 0.75rem;
-      border-radius: 999px;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--accent-emerald);
+      color: var(--accent-emerald);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-family: var(--font-mono);
     }
 
-    .dot {
-      width: 8px;
-      height: 8px;
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent-emerald);
       border-radius: 50%;
-      background: var(--success);
+      box-shadow: 0 0 8px var(--accent-emerald);
     }
 
-    .dot.pulse {
-      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
-    }
-
-    /* Main Grid Layout */
     main {
       flex: 1;
-      max-width: 1600px;
+      padding: 24px;
+      max-width: 1300px;
       margin: 0 auto;
       width: 100%;
-      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .grid-kpi {
       display: grid;
-      grid-template-columns: 360px 1fr 400px;
-      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
     }
 
-    @media (max-width: 1280px) {
-      main { grid-template-columns: 320px 1fr; }
-      .logs-column { grid-column: span 2; }
-    }
-
-    @media (max-width: 860px) {
-      main { grid-template-columns: 1fr; }
-      .logs-column { grid-column: span 1; }
-    }
-
-    /* Panels */
-    .panel {
-      background: var(--surface);
+    .kpi-card {
+      background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
+      border-radius: 12px;
+      padding: 16px 20px;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      gap: 8px;
     }
 
-    .panel-header {
-      padding: 1rem 1.25rem;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .panel-header h2 {
-      font-size: 0.925rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
-
-    .panel-body {
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    /* Agent Runtimes List */
-    .agent-card {
-      background: var(--surface-subtle);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .agent-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .agent-name {
-      font-size: 0.95rem;
-      font-weight: 700;
-    }
-
-    .agent-status {
-      font-size: 0.75rem;
-      font-family: var(--font-mono);
-      padding: 0.15rem 0.5rem;
-      border-radius: var(--radius-sm);
-      background: rgba(16, 185, 129, 0.15);
-      color: var(--success);
-      font-weight: 600;
-    }
-
-    .agent-meta {
+    .kpi-label {
       font-size: 0.8rem;
+      font-weight: 600;
       color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .kpi-val {
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+    }
+
+    .kpi-sub {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .layout-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .layout-2col { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
       display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel-title {
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
       justify-content: space-between;
     }
 
-    /* Command Console Form */
-    .field-group {
+    .form-group {
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
+      gap: 6px;
     }
 
     label {
@@ -240,139 +180,93 @@
     }
 
     input, select, textarea {
-      background: var(--surface-subtle);
+      background: var(--bg-surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text);
-      font-family: inherit;
-      font-size: 0.875rem;
-      padding: 0.65rem 0.85rem;
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      padding: 10px 14px;
+      border-radius: 8px;
       outline: none;
+      transition: border-color 0.15s;
     }
 
     input:focus, select:focus, textarea:focus {
       border-color: var(--border-focus);
     }
 
-    .btn-dispatch {
-      background: var(--accent);
+    textarea {
+      font-family: var(--font-mono);
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    button.btn-primary {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
       color: #fff;
-      border: none;
-      border-radius: var(--radius-sm);
-      padding: 0.75rem 1rem;
       font-weight: 600;
-      font-size: 0.875rem;
+      font-size: 0.9rem;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
       cursor: pointer;
-      margin-top: 0.5rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
+      gap: 8px;
+      transition: opacity 0.15s;
     }
 
-    .btn-dispatch:hover {
-      background: var(--accent-hover);
+    button.btn-primary:hover {
+      opacity: 0.9;
     }
 
-    /* Telemetry Metrics */
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-    }
-
-    .metric-box {
-      background: var(--surface-subtle);
+    .output-box {
+      background: var(--bg-surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 1rem;
-    }
-
-    .metric-label {
-      font-size: 0.725rem;
-      color: var(--text-dim);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .metric-value {
+      border-radius: 8px;
+      padding: 14px;
       font-family: var(--font-mono);
-      font-size: 1.35rem;
-      font-weight: 700;
-      margin-top: 0.25rem;
-      color: var(--text);
-    }
-
-    /* Event Log Stream */
-    .log-stream {
-      background: var(--surface-subtle);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 0.75rem;
-      height: 480px;
+      font-size: 0.85rem;
+      min-height: 200px;
+      white-space: pre-wrap;
+      word-break: break-word;
       overflow-y: auto;
-      font-family: var(--font-mono);
-      font-size: 0.775rem;
+      max-height: 400px;
+    }
+
+    .cockpit-links {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .cockpit-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      text-decoration: none;
+      color: var(--text-main);
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 4px;
+      transition: all 0.15s;
     }
 
-    .log-entry {
-      display: flex;
-      gap: 0.75rem;
-      padding: 0.35rem 0.5rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    .cockpit-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-focus);
     }
 
-    .log-time {
+    .cockpit-name {
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .cockpit-desc {
+      font-size: 0.75rem;
       color: var(--text-dim);
-      flex-shrink: 0;
-    }
-
-    .log-agent {
-      color: var(--accent);
-      font-weight: 600;
-      flex-shrink: 0;
-    }
-
-    .log-msg {
-      color: var(--text);
-    }
-
-    /* Tweaks Bar */
-    .tweaks-bar {
-      position: fixed;
-      bottom: 1.25rem;
-      right: 1.5rem;
-      background: var(--surface-elevated);
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 0.35rem 0.75rem;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-      z-index: 50;
-      font-size: 0.75rem;
-    }
-
-    .tweak-btn {
-      background: none;
-      border: 1px solid transparent;
-      color: var(--text-muted);
-      padding: 0.25rem 0.5rem;
-      border-radius: 999px;
-      cursor: pointer;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-
-    .tweak-btn.active {
-      background: var(--surface-subtle);
-      color: var(--text);
-      border-color: var(--border);
     }
   </style>
 </head>
@@ -380,196 +274,187 @@
 
   <header>
     <div class="brand">
-      <div class="brand-badge">VERTEX CORE</div>
-      <div class="brand-title">Multi-Agent Orchestrator &amp; Telemetry</div>
+      <div class="brand-logo">VO</div>
+      <div>
+        <div class="brand-title">Vertex Orchestrator</div>
+        <div style="font-size: 0.75rem; color: var(--text-dim);">Google Cloud · OpenRouter · Ollama Mesh</div>
+      </div>
     </div>
-    <div class="telemetry-pills">
-      <div class="pill">
-        <div class="dot pulse"></div>
-        <span>A2A Bus: <strong>ONLINE</strong></span>
-      </div>
-      <div class="pill">
-        <div class="dot"></div>
-        <span>Vertex AI: <strong>gemini-2.5-pro</strong></span>
-      </div>
-      <div class="pill">
-        <div class="dot"></div>
-        <span>Ollama: <strong>127.0.0.1:11434</strong></span>
-      </div>
+    <div class="badge-status">
+      <span class="badge-dot"></span>
+      <span id="mesh-status">ONLINE · :8000</span>
     </div>
   </header>
 
   <main>
-    <!-- Left Column: Agent Fleet -->
-    <section class="panel">
-      <div class="panel-header">
-        <h2>Active Agent Fleet (6)</h2>
+    <div class="grid-kpi">
+      <div class="kpi-card">
+        <div class="kpi-label">Vertex AI Project</div>
+        <div class="kpi-val" style="font-size: 1.1rem; color: var(--accent-cyan);" id="val-project">master-recovery-hub-2026</div>
+        <div class="kpi-sub">Region: us-central1</div>
       </div>
-      <div class="panel-body">
-        <div class="agent-card">
-          <div class="agent-card-header">
-            <div class="agent-name">CrewAI Crew</div>
-            <div class="agent-status">READY</div>
-          </div>
-          <div class="agent-meta">
-            <span>Model: gemini-2.5-pro</span>
-            <span>Tasks: 3 queued</span>
-          </div>
+      <div class="kpi-card">
+        <div class="kpi-label">OpenRouter Gateway</div>
+        <div class="kpi-val" style="color: var(--accent-emerald);" id="val-openrouter">ACTIVE</div>
+        <div class="kpi-sub">414 Models · BYOK Ready</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Local Ollama Fleet</div>
+        <div class="kpi-val" style="color: var(--accent-orange);" id="val-ollama">6 Models</div>
+        <div class="kpi-sub">Host: 127.0.0.1:11434</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Active Runners</div>
+        <div class="kpi-val" style="color: var(--accent-purple);">CrewAI · AutoGen · Aider</div>
+        <div class="kpi-sub">Unified Dispatch Layer</div>
+      </div>
+    </div>
+
+    <div class="layout-2col">
+      <!-- Interactive AI Dispatch -->
+      <div class="panel">
+        <div class="panel-title">
+          <span>Direct AI Execution Proxy</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">POST /ai/generate</span>
         </div>
 
-        <div class="agent-card">
-          <div class="agent-card-header">
-            <div class="agent-name">AutoGen Swarm</div>
-            <div class="agent-status">READY</div>
-          </div>
-          <div class="agent-meta">
-            <span>Provider: LiteLLM</span>
-            <span>Rounds: Multi-turn</span>
-          </div>
+        <div class="form-group">
+          <label>Provider</label>
+          <select id="sel-provider" onchange="updateModelOptions()">
+            <option value="openrouter">OpenRouter (Claude, Gemma, DeepSeek)</option>
+            <option value="vertex_ai">Google Vertex AI (Gemini 2.5)</option>
+          </select>
         </div>
 
-        <div class="agent-card">
-          <div class="agent-card-header">
-            <div class="agent-name">Aider Code Pilot</div>
-            <div class="agent-status">IDLE</div>
-          </div>
-          <div class="agent-meta">
-            <span>Repo: MasterRecoveryAgents</span>
-            <span>Mode: Architect</span>
-          </div>
+        <div class="form-group">
+          <label>Model ID</label>
+          <select id="sel-model">
+            <option value="google/gemma-4-31b-it:free">google/gemma-4-31b-it:free</option>
+            <option value="anthropic/claude-sonnet-4.5">anthropic/claude-sonnet-4.5</option>
+            <option value="deepseek/deepseek-r1">deepseek/deepseek-r1</option>
+            <option value="meta-llama/llama-3.3-70b-instruct">meta-llama/llama-3.3-70b-instruct</option>
+          </select>
         </div>
 
-        <div class="agent-card">
-          <div class="agent-card-header">
-            <div class="agent-name">Ollama Local Agent</div>
-            <div class="agent-status">READY</div>
-          </div>
-          <div class="agent-meta">
-            <span>Model: glm-5.2:cloud</span>
-            <span>ZDR: Local Edge</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Center Column: Command Dispatch & Telemetry (Surface: Command / Operate) -->
-    <section class="panel">
-      <div class="panel-header">
-        <h2>Mission Control &amp; Dispatch</h2>
-      </div>
-      <div class="panel-body">
-        <div class="metrics-grid">
-          <div class="metric-box">
-            <div class="metric-label">MCP Routing Throughput</div>
-            <div class="metric-value">372,236 <span style="font-size:0.8rem; color:var(--text-dim)">ops/sec</span></div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-label">Key Derivation Speed</div>
-            <div class="metric-value">1,014.84 <span style="font-size:0.8rem; color:var(--text-dim)">ops/sec</span></div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-label">Indexed Repository Mesh</div>
-            <div class="metric-value">78 <span style="font-size:0.8rem; color:var(--text-dim)">repos</span></div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-label">Mean RPC Latency</div>
-            <div class="metric-value">2.69 <span style="font-size:0.8rem; color:var(--text-dim)">μs</span></div>
-          </div>
+        <div class="form-group">
+          <label>Task / Prompt</label>
+          <textarea id="txt-prompt" placeholder="Enter task, code request, or estimation query..."></textarea>
         </div>
 
-        <form id="dispatchForm" style="display:flex; flex-direction:column; gap:0.85rem; margin-top:0.5rem;">
-          <div class="field-group">
-            <label for="target_agent">Target Agent Runtime</label>
-            <select id="target_agent">
-              <option value="crewai">CrewAI Multi-Agent Workflow</option>
-              <option value="autogen">AutoGen Conversational Swarm</option>
-              <option value="aider">Aider Code Editing Agent</option>
-              <option value="ollama">Ollama Local Edge LLM</option>
-            </select>
-          </div>
-
-          <div class="field-group">
-            <label for="mission_prompt">Mission Directive / Prompt</label>
-            <textarea id="mission_prompt" rows="3" placeholder="Enter instructions for the selected agent fleet..."></textarea>
-          </div>
-
-          <button type="submit" class="btn-dispatch">
-            <span>⚡ Dispatch Agent Mission</span>
-          </button>
-        </form>
+        <button class="btn-primary" id="btn-run" onclick="executePrompt()">
+          <span>Execute Task</span>
+        </button>
       </div>
-    </section>
 
-    <!-- Right Column: Live Event Stream (Surface: Monitor) -->
-    <section class="panel logs-column">
-      <div class="panel-header">
-        <h2>Live Event Stream</h2>
-        <span style="font-size:0.75rem; color:var(--success); font-family:var(--font-mono)">● REALTIME</span>
+      <!-- Execution Console -->
+      <div class="panel">
+        <div class="panel-title">
+          <span>Execution Output Console</span>
+          <span id="output-meta" style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">IDLE</span>
+        </div>
+        <div class="output-box" id="txt-output">Waiting for command dispatch...</div>
       </div>
-      <div class="panel-body">
-        <div class="log-stream" id="logStream">
-          <div class="log-entry">
-            <span class="log-time">12:49:14</span>
-            <span class="log-agent">[SYSTEM]</span>
-            <span class="log-msg">Vertex Orchestrator initialized on port 8000</span>
-          </div>
-          <div class="log-entry">
-            <span class="log-time">12:49:15</span>
-            <span class="log-agent">[A2A_BUS]</span>
-            <span class="log-msg">10 live handlers auto-registered</span>
-          </div>
-          <div class="log-entry">
-            <span class="log-time">12:49:16</span>
-            <span class="log-agent">[MCP]</span>
-            <span class="log-msg">GCP Secret Manager &amp; Storage ADC authenticated</span>
-          </div>
-          <div class="log-entry">
-            <span class="log-time">12:49:18</span>
-            <span class="log-agent">[NEURITE]</span>
-            <span class="log-msg">Connected /vertex bridge route on port 3000</span>
-          </div>
+    </div>
+
+    <!-- Mesh Ecosystem Cockpits -->
+    <div class="panel">
+      <div class="panel-title">Repository Cockpits & Frontends</div>
+      <div class="cockpit-links">
+        <div class="cockpit-btn">
+          <div class="cockpit-name">ContractorOS</div>
+          <div class="cockpit-desc">Mobile & Web CRM (:5173)</div>
+        </div>
+        <div class="cockpit-btn">
+          <div class="cockpit-name">Fence Estimate Tool</div>
+          <div class="cockpit-desc">FastAPI + Vertex (:8080)</div>
+        </div>
+        <div class="cockpit-btn">
+          <div class="cockpit-name">Numera2 Cockpit</div>
+          <div class="cockpit-desc">Enterprise General Ledger</div>
+        </div>
+        <div class="cockpit-btn">
+          <div class="cockpit-name">GenAI MindMap</div>
+          <div class="cockpit-desc">Interactive Visual DAG Canvas</div>
+        </div>
+        <div class="cockpit-btn">
+          <div class="cockpit-name">ParlayVision AI</div>
+          <div class="cockpit-desc">Monte Carlo Odds Engine</div>
+        </div>
+        <div class="cockpit-btn">
+          <div class="cockpit-name">Culina AI</div>
+          <div class="cockpit-desc">Culinary Intelligence Platform</div>
         </div>
       </div>
-    </section>
+    </div>
   </main>
 
-  <!-- Tweaks Bar -->
-  <div class="tweaks-bar">
-    <span style="color: var(--text-dim); font-weight: 600;">Theme:</span>
-    <button class="tweak-btn active" onclick="setTheme('dark')">Dark Ops</button>
-    <button class="tweak-btn" onclick="setTheme('cyber')">Cyber Cyan</button>
-    <button class="tweak-btn" onclick="setTheme('light')">Light</button>
-  </div>
-
   <script>
-    function setTheme(t) {
-      if (t === 'dark') document.documentElement.removeAttribute('data-theme');
-      else document.documentElement.setAttribute('data-theme', t);
-      document.querySelectorAll('.tweaks-bar .tweak-btn').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
+    function updateModelOptions() {
+      const prov = document.getElementById('sel-provider').value;
+      const sel = document.getElementById('sel-model');
+      sel.innerHTML = '';
+      if (prov === 'openrouter') {
+        sel.innerHTML = `
+          <option value="google/gemma-4-31b-it:free">google/gemma-4-31b-it:free (Free Tier)</option>
+          <option value="anthropic/claude-sonnet-4.5">anthropic/claude-sonnet-4.5</option>
+          <option value="deepseek/deepseek-r1">deepseek/deepseek-r1</option>
+          <option value="meta-llama/llama-3.3-70b-instruct">meta-llama/llama-3.3-70b-instruct</option>
+          <option value="google/gemini-2.5-flash">google/gemini-2.5-flash</option>
+        `;
+      } else {
+        sel.innerHTML = `
+          <option value="gemini-2.5-flash">gemini-2.5-flash (Fast & Multimodal)</option>
+          <option value="gemini-2.5-pro">gemini-2.5-pro (Deep Reasoning)</option>
+        `;
+      }
     }
 
-    const form = document.getElementById('dispatchForm');
-    const logStream = document.getElementById('logStream');
+    async function executePrompt() {
+      const btn = document.getElementById('btn-run');
+      const out = document.getElementById('txt-output');
+      const meta = document.getElementById('output-meta');
+      const prompt = document.getElementById('txt-prompt').value.trim();
+      const provider = document.getElementById('sel-provider').value;
+      const model = document.getElementById('sel-model').value;
 
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const agent = document.getElementById('target_agent').value;
-      const prompt = document.getElementById('mission_prompt').value;
-      if (!prompt) return;
+      if (!prompt) {
+        alert('Please enter a prompt');
+        return;
+      }
 
-      const now = new Date().toTimeString().split(' ')[0];
-      const entry = document.createElement('div');
-      entry.className = 'log-entry';
-      entry.innerHTML = `
-        <span class="log-time">${now}</span>
-        <span class="log-agent">[${agent.toUpperCase()}]</span>
-        <span class="log-msg">Mission dispatched: "${prompt.substring(0, 40)}..."</span>
-      `;
-      logStream.appendChild(entry);
-      logStream.scrollTop = logStream.scrollHeight;
-      document.getElementById('mission_prompt').value = '';
-    });
+      btn.disabled = true;
+      btn.innerText = 'Executing...';
+      meta.innerText = 'DISPATCHING TO ' + provider.toUpperCase();
+      out.innerText = 'Running request through ' + model + '...';
+
+      try {
+        const resp = await fetch('/ai/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, provider, model })
+        });
+        const data = await resp.json();
+        if (data.success) {
+          out.innerText = data.content || JSON.stringify(data, null, 2);
+          meta.innerText = `DONE · ${data.model} · ${data.usage ? data.usage.total_tokens + ' tokens' : 'OK'}`;
+        } else {
+          out.innerText = 'Error: ' + (data.error || 'Unknown error');
+          meta.innerText = 'FAILED';
+        }
+      } catch (err) {
+        out.innerText = 'Network error: ' + err.message;
+        meta.innerText = 'ERROR';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Execute Task';
+      }
+    }
+
+    // Load initial health
+    fetch('/health').then(r => r.json()).then(data => {
+      if (data.project_id) document.getElementById('val-project').innerText = data.project_id;
+      if (data.openrouter_configured) document.getElementById('val-openrouter').innerText = 'CONFIGURED';
+    }).catch(() => {});
   </script>
 </body>
 </html>
