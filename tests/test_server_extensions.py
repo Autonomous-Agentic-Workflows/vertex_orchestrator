@@ -108,6 +108,43 @@ class TestServerExtensions(unittest.TestCase):
         self.assertEqual(fake.response_body["provider"], "vertex_ai")
         self.assertEqual(fake.response_body["content"], "Vertex AI generated response")
 
+    def test_post_and_get_telemetry(self):
+        fake_post = FakeHandler("POST", "/telemetry", {
+            "source": "test_agent",
+            "event": "audit_metric",
+            "metric_value": 42
+        })
+        fake_post.do_POST()
+        self.assertEqual(fake_post.response_code, 200)
+        self.assertTrue(fake_post.response_body["success"])
+        self.assertTrue(fake_post.response_body["recorded"])
+
+        fake_get = FakeHandler("GET", "/telemetry/recent?limit=5")
+        fake_get.do_GET()
+        self.assertEqual(fake_get.response_code, 200)
+        self.assertTrue(fake_get.response_body["success"])
+        self.assertGreaterEqual(fake_get.response_body["count"], 1)
+
+    def test_loops_start_stop_all(self):
+        fake_start = FakeHandler("POST", "/loops/start-all")
+        fake_start.do_POST()
+        self.assertEqual(fake_start.response_code, 200)
+        self.assertTrue(fake_start.response_body["success"])
+
+        fake_stop = FakeHandler("POST", "/loops/stop-all")
+        fake_stop.do_POST()
+        self.assertEqual(fake_stop.response_code, 200)
+        self.assertTrue(fake_stop.response_body["success"])
+
+    def test_loops_trigger_by_name(self):
+        fake_trigger = FakeHandler("POST", "/loops/trigger/recovery_scanning?dry=1")
+        fake_trigger.do_POST()
+        self.assertEqual(fake_trigger.response_code, 200)
+        self.assertTrue(fake_trigger.response_body["success"])
+        self.assertEqual(fake_trigger.response_body["loop_id"], "recovery_scanning")
+        self.assertEqual(fake_trigger.response_body["mode"], "dry_run")
+
 
 if __name__ == "__main__":
     unittest.main()
+

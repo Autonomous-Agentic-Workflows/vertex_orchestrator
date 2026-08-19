@@ -8,6 +8,7 @@ build/
 .venv/
 .env
 .aider*
+*.log
 
 # recovery-overseer (Node.js subproject)
 recovery_overseer/node_modules/

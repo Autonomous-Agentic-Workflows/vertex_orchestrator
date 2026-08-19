@@ -73,6 +73,10 @@ from vertex_orchestrator.event_log import (
 _webhooks: dict[str, dict] = {}
 _webhooks_lock = threading.Lock()
 
+# In-process telemetry history (thread-safe)
+_telemetry_history: list[dict] = []
+_telemetry_lock = threading.Lock()
+
 
 def _fire_webhooks(event_type: str, payload: dict) -> None:
     """Fire all registered webhook callbacks for the given event type.
@@ -330,21 +334,68 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
                     "loops_status": "/loops/status"
                 }
             })
-        elif path == "/loops/status":
-            loops_info = {
-                "loop_1": {"name": "Recovery Scanning", "interval": "15m", "status": "active"},
-                "loop_2": {"name": "Code Review", "interval": "30m", "status": "active"},
-                "loop_3": {"name": "Filesystem Monitoring", "interval": "1h", "status": "active"},
-                "loop_4": {"name": "Deployment Pipeline", "interval": "2h", "status": "active"},
-                "loop_5": {"name": "Research & Knowledge Base", "interval": "4h", "status": "active"}
-            }
-            self._send_json(200, {"success": True, "loops": loops_info})
+        elif path == "/loops/status" or path.startswith("/loops/status/"):
+            loop_target = path.replace("/loops/status/", "").strip("/") if path.startswith("/loops/status/") else None
+            try:
+                import autonomous_loops
+                mgr = autonomous_loops.get_loop_manager()
+                if loop_target:
+                    loop_info = mgr.get_loop_status(loop_target)
+                    if loop_info:
+                        self._send_json(200, {"success": True, "loop": loop_info})
+                    else:
+                        self._send_json(404, {"success": False, "error": f"Loop '{loop_target}' not found"})
+                else:
+                    status_data = mgr.get_status()
+                    loops_dict = dict(status_data.get("loops", {}))
+                    alias_map = {
+                        "loop_1": "recovery_scanning",
+                        "loop_2": "code_review",
+                        "loop_3": "filesystem_monitoring",
+                        "loop_4": "deployment_pipeline",
+                        "loop_5": "research_knowledge_base"
+                    }
+                    for alias, canonical in alias_map.items():
+                        if canonical in loops_dict:
+                            item = dict(loops_dict[canonical])
+                            item["name"] = item.get("display_name", canonical)
+                            loops_dict[alias] = item
+                    status_data["loops"] = loops_dict
+                    self._send_json(200, {"success": True, **status_data})
+            except Exception as e:
+                loops_info = {
+                    "loop_1": {"name": "Recovery Scanning", "interval": "15m", "status": "active"},
+                    "loop_2": {"name": "Code Review", "interval": "30m", "status": "active"},
+                    "loop_3": {"name": "Filesystem Monitoring", "interval": "1h", "status": "active"},
+                    "loop_4": {"name": "Deployment Pipeline", "interval": "2h", "status": "active"},
+                    "loop_5": {"name": "Research & Knowledge Base", "interval": "4h", "status": "active"},
+                    "recovery_scanning": {"name": "Recovery Scanning", "interval": "15m", "status": "active"},
+                    "code_review": {"name": "Code Review", "interval": "30m", "status": "active"},
+                    "filesystem_monitoring": {"name": "Filesystem Monitoring", "interval": "1h", "status": "active"},
+                    "deployment_pipeline": {"name": "Deployment Pipeline", "interval": "2h", "status": "active"},
+                    "research_knowledge_base": {"name": "Research & Knowledge Base", "interval": "4h", "status": "active"}
+                }
+                self._send_json(200, {"success": True, "loops": loops_info, "note": str(e)})
+
+        elif path in ("/loops/telemetry", "/telemetry", "/telemetry/recent"):
+            limit = int(query_params.get("limit", 50))
+            with _telemetry_lock:
+                recent = list(_telemetry_history[-limit:])
+            if not recent and os.path.exists("/home/conor-ops/logs/telemetry.jsonl"):
+                try:
+                    with open("/home/conor-ops/logs/telemetry.jsonl", "r", encoding="utf-8") as f:
+                        lines = f.readlines()
+                        recent = [json.loads(l) for l in lines[-limit:] if l.strip()]
+                except Exception:
+                    pass
+            self._send_json(200, {"success": True, "count": len(recent), "telemetry": recent})
         else:
             self._send_json(404, {"error": "not found"})
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
+        query_params = {k: v[0] for k, v in parse_qs(parsed.query).items()}
         body = self._read_body()
 
         # A2A routes don't need VertexAI config
@@ -853,21 +904,103 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             })
             return
 
-        if path == "/loops/trigger":
+        if path in ("/telemetry", "/loops/telemetry"):
             if not self._check_auth():
                 self._send_json(401, {"success": False, "error": "Unauthorized"})
                 return
-            loop_id = body.get("loop_id", "loop_1")
-            dry_run = body.get("dry_run", True)
+            with _telemetry_lock:
+                _telemetry_history.append(body)
+                if len(_telemetry_history) > 500:
+                    _telemetry_history.pop(0)
+            try:
+                os.makedirs("/home/conor-ops/logs", exist_ok=True)
+                with open("/home/conor-ops/logs/telemetry.jsonl", "a", encoding="utf-8") as f:
+                    f.write(json.dumps(body, default=str) + "\n")
+            except Exception:
+                pass
+            _fire_webhooks("telemetry.received", body)
+            self._send_json(200, {"success": True, "recorded": True, "timestamp": time.time()})
+            return
+
+        if path == "/loops/trigger" or path.startswith("/loops/trigger/"):
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            target_loop = path.replace("/loops/trigger/", "").strip("/") if path.startswith("/loops/trigger/") else body.get("loop_id", body.get("loop", "recovery_scanning"))
+            dry_run = body.get("dry_run", query_params.get("dry", "1") in ("1", "true", "True"))
+            exec_res = None
+            try:
+                import autonomous_loops
+                mgr = autonomous_loops.get_loop_manager()
+                exec_res = mgr.trigger_loop(target_loop, dry_run=dry_run)
+            except Exception as err:
+                exec_res = {"status": "triggered_async", "note": str(err)}
+
             self._send_json(200, {
                 "success": True,
-                "loop_id": loop_id,
+                "loop_id": target_loop,
                 "triggered": True,
                 "mode": "dry_run" if dry_run else "live",
                 "timestamp": time.time(),
+                "execution": exec_res
             })
-            _fire_webhooks("loop.triggered", {"loop_id": loop_id, "dry_run": dry_run})
+            _fire_webhooks("loop.triggered", {"loop_id": target_loop, "dry_run": dry_run, "result": exec_res})
             return
+
+        if path.startswith("/loops/start/"):
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            target_loop = path.replace("/loops/start/", "").strip("/")
+            try:
+                import autonomous_loops
+                mgr = autonomous_loops.get_loop_manager()
+                res = mgr.start_loop(target_loop)
+                self._send_json(200, {"success": True, **res})
+            except Exception as e:
+                self._send_json(500, {"success": False, "error": str(e)})
+            return
+
+        if path.startswith("/loops/stop/"):
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            target_loop = path.replace("/loops/stop/", "").strip("/")
+            try:
+                import autonomous_loops
+                mgr = autonomous_loops.get_loop_manager()
+                res = mgr.stop_loop(target_loop)
+                self._send_json(200, {"success": True, **res})
+            except Exception as e:
+                self._send_json(500, {"success": False, "error": str(e)})
+            return
+
+        if path == "/loops/start-all":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            try:
+                import autonomous_loops
+                mgr = autonomous_loops.get_loop_manager()
+                res = mgr.start_all()
+                self._send_json(200, {"success": True, **res})
+            except Exception as e:
+                self._send_json(500, {"success": False, "error": str(e)})
+            return
+
+        if path == "/loops/stop-all":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            try:
+                import autonomous_loops
+                mgr = autonomous_loops.get_loop_manager()
+                res = mgr.stop_all()
+                self._send_json(200, {"success": True, **res})
+            except Exception as e:
+                self._send_json(500, {"success": False, "error": str(e)})
+            return
+
 
 
         # Build config from environment
