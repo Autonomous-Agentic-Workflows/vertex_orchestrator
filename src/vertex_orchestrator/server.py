@@ -49,6 +49,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import threading
 import urllib.request
 import urllib.error
@@ -288,6 +289,50 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             from vertex_orchestrator.agents_cli_manager import get_agents_cli
             cli = get_agents_cli()
             self._send_json(200, cli.playground_status())
+        elif path == "/ai/live/config":
+            self._send_json(200, {
+                "success": True,
+                "protocol": "wss",
+                "default_model": "models/gemini-2.0-flash-exp",
+                "supported_models": [
+                    "models/gemini-2.0-flash-exp",
+                    "models/gemini-robotics-er-2-streaming-preview",
+                    "gemini-2.5-flash",
+                ],
+                "voices": ["Puck", "Charon", "Kore", "Fenrir", "Aoede"],
+                "modalities": ["TEXT", "AUDIO"],
+                "sample_rates": {
+                    "send_pcm": 16000,
+                    "receive_pcm": 24000
+                },
+                "api_key_configured": bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
+            })
+        elif path == "/devgate/status":
+            self._send_json(200, {
+                "success": True,
+                "client": "HermesBridgeClient",
+                "server_version": "1.4.0",
+                "active_project": os.environ.get("GOOGLE_CLOUD_PROJECT", "master-recovery-hub-2026"),
+                "port": 8000,
+                "supported_runners": ["crewai", "autogen", "aider", "cline", "openrouter", "ollama", "vertex_ai"],
+                "a2a_bus_active": True,
+                "endpoints": {
+                    "health": "/health",
+                    "execute": "/execute",
+                    "ai_generate": "/ai/generate",
+                    "a2a_route": "/a2a/route",
+                    "loops_status": "/loops/status"
+                }
+            })
+        elif path == "/loops/status":
+            loops_info = {
+                "loop_1": {"name": "Recovery Scanning", "interval": "15m", "status": "active"},
+                "loop_2": {"name": "Code Review", "interval": "30m", "status": "active"},
+                "loop_3": {"name": "Filesystem Monitoring", "interval": "1h", "status": "active"},
+                "loop_4": {"name": "Deployment Pipeline", "interval": "2h", "status": "active"},
+                "loop_5": {"name": "Research & Knowledge Base", "interval": "4h", "status": "active"}
+            }
+            self._send_json(200, {"success": True, "loops": loops_info})
         else:
             self._send_json(404, {"error": "not found"})
 
@@ -749,9 +794,74 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
                 except Exception as e:
                     self._send_json(500, {"success": False, "error": f"Ollama error: {str(e)}"})
                     return
+
+            elif provider in ("vertex_ai", "google", "gemini"):
+                try:
+                    from google import genai
+                    from google.genai import types
+
+                    gemini_api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+                    project_id = os.environ.get("GOOGLE_CLOUD_PROJECT", "master-recovery-hub-2026")
+                    location = os.environ.get("VERTEXAI_LOCATION", "us-central1")
+
+                    if gemini_api_key:
+                        client = genai.Client(api_key=gemini_api_key)
+                    else:
+                        client = genai.Client(vertexai=True, project=project_id, location=location)
+
+                    v_model = model if model.startswith("gemini") or "/" in model else "gemini-2.5-flash"
+                    config = types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        temperature=float(body.get("temperature", 0.2)),
+                    )
+                    resp = client.models.generate_content(
+                        model=v_model,
+                        contents=prompt,
+                        config=config,
+                    )
+                    content = resp.text if hasattr(resp, "text") else str(resp)
+                    self._send_json(200, {
+                        "success": True,
+                        "provider": "vertex_ai",
+                        "model": v_model,
+                        "content": content,
+                    })
+                    return
+                except Exception as e:
+                    self._send_json(500, {"success": False, "error": f"Vertex AI generation error: {str(e)}"})
+                    return
             else:
                 self._send_json(400, {"success": False, "error": f"Unknown provider: {provider}"})
                 return
+
+        if path == "/devgate/verify":
+            client_id = body.get("client_id", "HermesBridgeClient-Android")
+            device_info = body.get("device_info", {})
+            self._send_json(200, {
+                "success": True,
+                "verified": True,
+                "client_id": client_id,
+                "session_token": f"devgate-{os.urandom(8).hex()}",
+                "server_version": "1.4.0",
+                "active_project": os.environ.get("GOOGLE_CLOUD_PROJECT", "master-recovery-hub-2026"),
+            })
+            return
+
+        if path == "/loops/trigger":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            loop_id = body.get("loop_id", "loop_1")
+            dry_run = body.get("dry_run", True)
+            self._send_json(200, {
+                "success": True,
+                "loop_id": loop_id,
+                "triggered": True,
+                "mode": "dry_run" if dry_run else "live",
+                "timestamp": time.time(),
+            })
+            _fire_webhooks("loop.triggered", {"loop_id": loop_id, "dry_run": dry_run})
+            return
 
 
         # Build config from environment

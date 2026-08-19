@@ -323,6 +323,7 @@
           <select id="sel-provider" onchange="updateModelOptions()">
             <option value="openrouter">OpenRouter (Claude, Gemma, DeepSeek)</option>
             <option value="vertex_ai">Google Vertex AI (Gemini 2.5)</option>
+            <option value="ollama">Local Ollama Fleet (Gemma4, Qwen)</option>
           </select>
         </div>
 
@@ -400,6 +401,13 @@
           <option value="deepseek/deepseek-r1">deepseek/deepseek-r1</option>
           <option value="meta-llama/llama-3.3-70b-instruct">meta-llama/llama-3.3-70b-instruct</option>
           <option value="google/gemini-2.5-flash">google/gemini-2.5-flash</option>
+        `;
+      } else if (prov === 'ollama') {
+        sel.innerHTML = `
+          <option value="gemma4:26b">gemma4:26b (Local Default)</option>
+          <option value="gemma4:31b">gemma4:31b (Reasoning)</option>
+          <option value="qwen2.5-coder:7b">qwen2.5-coder:7b (Code & Refactor)</option>
+          <option value="ollama-kb-coder:latest">ollama-kb-coder (Knowledge Base)</option>
         `;
       } else {
         sel.innerHTML = `
