@@ -13,6 +13,7 @@ a local Ollama instance via the ``OllamaRunner``.
 from __future__ import annotations
 
 import logging
+import time
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
@@ -65,6 +66,11 @@ class OrchestratorResult:
         runner_used: str = "",
         fallback_used: bool = False,
         fallback_error: Optional[str] = None,
+        tier_used: Optional[str] = None,
+        model_used: Optional[str] = None,
+        cost_usd: float = 0.0,
+        execution_latency_ms: float = 0.0,
+        centaur_decision: Optional[Any] = None,
     ) -> None:
         self.success = success
         self.output = output
@@ -72,12 +78,18 @@ class OrchestratorResult:
         self.runner_used = runner_used
         self.fallback_used = fallback_used
         self.fallback_error = fallback_error
+        self.tier_used = tier_used
+        self.model_used = model_used
+        self.cost_usd = cost_usd
+        self.execution_latency_ms = execution_latency_ms
+        self.centaur_decision = centaur_decision
 
     def __repr__(self) -> str:
         if self.success:
             fb = " [fallback]" if self.fallback_used else ""
+            tier_info = f" tier={self.tier_used}" if self.tier_used else ""
             return (
-                f"OrchestratorResult(success=True, runner={self.runner_used!r}{fb}, "
+                f"OrchestratorResult(success=True, runner={self.runner_used!r}{fb}{tier_info}, "
                 f"output={self.output!r})"
             )
         fb = f" fallback_error={self.fallback_error!r}" if self.fallback_error else ""
@@ -328,3 +340,74 @@ class Orchestrator:
             message=message,
         )
         return runner.run()
+
+    def execute_with_waterfall(
+        self,
+        task: str,
+        task_type: TaskType = TaskType.ANALYSIS,
+        max_sla_ms: int = 2000,
+        max_cost_usd: float = 1.0,
+        zero_data_retention: bool = False,
+        preferred_model: Optional[str] = None,
+        delegation_context: Optional[Any] = None,
+        action_type: Optional[str] = None,
+        action_payload: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> OrchestratorResult:
+        """Execute a task using the 3-Tier Dynamic Compute Waterfall and DCC Governance.
+
+        Tiers:
+          - Tier 1: Local Ollama Fleet (0ms latency, zero API cost)
+          - Tier 2: OpenRouter Mid-Tier (Fast specialized models)
+          - Tier 3: Google Vertex AI (Gemini 2.0/2.5) & Cloud Run ephemeral scaling
+
+        Also checks Centaur Escalation Gate if an irreversible action is declared.
+        """
+        # Centaur Escalation Gate check
+        if action_type and delegation_context is not None:
+            try:
+                from dcc_governance import get_dcc_governance
+                gov = get_dcc_governance()
+                decision = gov.evaluate_action(
+                    action_type=action_type,
+                    payload=action_payload or {"task": task},
+                    context=delegation_context,
+                )
+                if decision.requires_escalation or not decision.allowed:
+                    return OrchestratorResult(
+                        success=False,
+                        error=f"Centaur Gate Intercepted: {decision.reason}",
+                        runner_used="centaur_gate",
+                        centaur_decision=decision.to_dict(),
+                    )
+            except Exception as e:
+                logger.warning("Centaur Gate check encountered error: %s", e)
+
+        from compute_waterfall import ComputeTask, get_compute_waterfall
+
+        waterfall = get_compute_waterfall()
+        compute_task = ComputeTask(
+            task_id=f"wf-{int(time.time() * 1000)}",
+            task_type=task_type.value if hasattr(task_type, "value") else str(task_type),
+            prompt=task,
+            max_sla_ms=max_sla_ms,
+            max_cost_usd=max_cost_usd,
+            zero_data_retention=zero_data_retention,
+            preferred_model=preferred_model,
+            metadata=kwargs,
+        )
+
+        outcome = waterfall.execute(compute_task)
+        runner_name = _TASK_RUNNER_MAP.get(task_type, "waterfall")
+
+        return OrchestratorResult(
+            success=outcome.success,
+            output=outcome.output if outcome.success else None,
+            error=outcome.error if not outcome.success else None,
+            runner_used=runner_name,
+            fallback_used=outcome.fallback_triggered,
+            tier_used=outcome.tier_used.value if hasattr(outcome.tier_used, "value") else str(outcome.tier_used),
+            model_used=outcome.model_used,
+            cost_usd=outcome.cost_usd,
+            execution_latency_ms=outcome.latency_ms,
+        )

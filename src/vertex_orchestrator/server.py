@@ -51,10 +51,14 @@ import json
 import os
 import sys
 import time
+import queue
+import socket
+import select
 import threading
 import urllib.request
 import urllib.error
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from datetime import datetime, timezone
+from http.server import HTTPServer, ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
 # Ensure parent directory and root /home/conor-ops are in sys.path for standalone script execution
@@ -77,16 +81,136 @@ from vertex_orchestrator.event_log import (
 _webhooks: dict[str, dict] = {}
 _webhooks_lock = threading.Lock()
 
-# In-process telemetry history (thread-safe)
+# In-process telemetry history & SSE streaming (thread-safe)
 _telemetry_history: list[dict] = []
 _telemetry_lock = threading.Lock()
+_telemetry_subscribers: list[dict] = []
+_telemetry_subscribers_lock = threading.Lock()
+
+
+def register_telemetry_subscriber(filters: dict | None = None, maxsize: int = 256) -> queue.Queue:
+    """Registers an SSE client subscriber queue with subscription filters."""
+    q = queue.Queue(maxsize=maxsize)
+    subscriber_info = {
+        "queue": q,
+        "filters": filters or {},
+        "created_at": time.time(),
+    }
+    with _telemetry_subscribers_lock:
+        _telemetry_subscribers.append(subscriber_info)
+    return q
+
+
+def unregister_telemetry_subscriber(q: queue.Queue) -> None:
+    """Unregisters an SSE client subscriber queue."""
+    with _telemetry_subscribers_lock:
+        _telemetry_subscribers[:] = [s for s in _telemetry_subscribers if s["queue"] is not q]
+
+
+def _matches_telemetry_filter(event: dict, filters: dict) -> bool:
+    """Evaluates whether a telemetry event matches subscriber filters."""
+    if not filters:
+        return True
+
+    # 1. Event type filter (supports comma-separated list)
+    event_filter = filters.get("event") or filters.get("event_type") or filters.get("type")
+    if event_filter and event_filter != "*":
+        allowed = [e.strip().lower() for e in str(event_filter).split(",") if e.strip()]
+        ev_type = str(event.get("event") or event.get("event_type") or event.get("type") or "").lower()
+        if not any(a == ev_type or a in ev_type for a in allowed):
+            return False
+
+    # 2. Agent filter
+    agent_filter = filters.get("agent") or filters.get("agent_id")
+    if agent_filter and agent_filter != "*":
+        candidates = [
+            event.get("agent"),
+            event.get("agent_id"),
+            event.get("target_agent"),
+            event.get("source_agent"),
+        ]
+        if isinstance(event.get("payload"), dict):
+            candidates.extend([
+                event["payload"].get("agent_id"),
+                event["payload"].get("agent"),
+                event["payload"].get("target_agent"),
+                event["payload"].get("source_agent"),
+                event["payload"].get("sender"),
+                event["payload"].get("recipient"),
+            ])
+        if isinstance(event.get("data"), dict):
+            candidates.extend([
+                event["data"].get("agent_id"),
+                event["data"].get("agent"),
+                event["data"].get("sender"),
+                event["data"].get("recipient"),
+            ])
+        if not any(c and (str(c) == str(agent_filter) or str(agent_filter).lower() in str(c).lower()) for c in candidates):
+            return False
+
+    # 3. Category filter (e.g. llm, agent, orchestrator, webhook)
+    category_filter = filters.get("category")
+    if category_filter and category_filter != "*":
+        ev_category = str(event.get("category") or "").lower()
+        ev_type = str(event.get("event") or event.get("event_type") or "").lower()
+        if category_filter.lower() not in ev_category and not ev_type.startswith(category_filter.lower()):
+            return False
+
+    return True
+
+
+def broadcast_telemetry(event: dict) -> None:
+    """Records a telemetry event and broadcasts it to all active matching SSE subscribers."""
+    if not isinstance(event, dict):
+        return
+    if "timestamp" not in event:
+        event["timestamp"] = time.time()
+    if "iso_timestamp" not in event:
+        event["iso_timestamp"] = datetime.now(timezone.utc).isoformat()
+
+    # Record in history (max 500)
+    with _telemetry_lock:
+        _telemetry_history.append(event)
+        if len(_telemetry_history) > 500:
+            del _telemetry_history[:-500]
+
+    # Broadcast to SSE queues
+    with _telemetry_subscribers_lock:
+        subscribers = list(_telemetry_subscribers)
+
+    for sub in subscribers:
+        try:
+            if _matches_telemetry_filter(event, sub["filters"]):
+                q = sub["queue"]
+                try:
+                    q.put_nowait(event)
+                except queue.Full:
+                    try:
+                        q.get_nowait()
+                    except queue.Empty:
+                        pass
+                    try:
+                        q.put_nowait(event)
+                    except queue.Full:
+                        pass
+        except Exception:
+            pass
 
 
 def _fire_webhooks(event_type: str, payload: dict) -> None:
-    """Fire all registered webhook callbacks for the given event type.
+    """Fire all registered webhook callbacks for the given event type and broadcast telemetry.
 
     Calls each matching webhook synchronously (called after response is sent).
     """
+    try:
+        broadcast_telemetry({
+            "event": event_type,
+            "category": "agent" if event_type.startswith("agent.") or event_type.startswith("a2a.") else "orchestrator",
+            "payload": payload,
+        })
+    except Exception:
+        pass
+
     with _webhooks_lock:
         matching = [
             (url, cfg) for url, cfg in _webhooks.items()
@@ -125,16 +249,24 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def _check_auth(self) -> bool:
+    def _check_auth(self, query_params: dict | None = None) -> bool:
         """Check API key auth. Returns True if authorized or no key configured."""
         api_key = os.environ.get("ORCHESTRATOR_API_KEY", "")
         if not api_key:
             return True  # No key set = open (local dev only)
         auth = self.headers.get("Authorization", "")
-        if auth != f"Bearer {api_key}":
-            log_security("auth_failure", f"path={self.path} ip={self.client_address[0]}")
-            return False
-        return True
+        if auth == f"Bearer {api_key}":
+            return True
+        if self.headers.get("X-API-Key") == api_key:
+            return True
+        if query_params:
+            param_key = query_params.get("api_key") or query_params.get("token") or query_params.get("key")
+            if isinstance(param_key, list) and param_key and param_key[0] == api_key:
+                return True
+            if isinstance(param_key, str) and param_key == api_key:
+                return True
+        log_security("auth_failure", f"path={self.path} ip={self.client_address[0]}")
+        return False
 
     def _read_body(self) -> dict:
         length = int(self.headers.get("Content-Length", 0))
@@ -303,6 +435,28 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             from vertex_orchestrator.agents_cli_manager import get_agents_cli
             cli = get_agents_cli()
             self._send_json(200, cli.playground_status())
+        elif path == "/waterfall/status":
+            try:
+                from compute_waterfall import get_compute_waterfall
+                wf = get_compute_waterfall()
+                audit = wf.audit_waterfall()
+                self._send_json(200, {"success": True, **audit})
+            except Exception as e:
+                self._send_json(500, {"success": False, "error": str(e)})
+        elif path == "/waterfall/metrics":
+            try:
+                from compute_waterfall import get_compute_waterfall
+                wf = get_compute_waterfall()
+                self._send_json(200, {"success": True, "metrics": wf.get_metrics()})
+            except Exception as e:
+                self._send_json(500, {"success": False, "error": str(e)})
+        elif path == "/dcc/pending":
+            try:
+                from dcc_governance import get_dcc_governance
+                gov = get_dcc_governance()
+                self._send_json(200, {"success": True, "pending_requests": gov.gate.get_pending_requests()})
+            except Exception as e:
+                self._send_json(500, {"success": False, "error": str(e)})
         elif path == "/ai/live/config":
             self._send_json(200, {
                 "success": True,
@@ -400,6 +554,87 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
                 except Exception:
                     pass
             self._send_json(200, {"success": True, "count": len(recent), "telemetry": recent})
+        elif path == "/telemetry/stream":
+            if not self._check_auth(query_params):
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+
+            event_filter = query_params.get("event") or query_params.get("event_type") or query_params.get("type")
+            agent_filter = query_params.get("agent") or query_params.get("agent_id")
+            category_filter = query_params.get("category")
+            try:
+                heartbeat_interval = float(query_params.get("heartbeat", 15.0))
+            except (ValueError, TypeError):
+                heartbeat_interval = 15.0
+
+            filters = {}
+            if event_filter:
+                filters["event"] = event_filter
+            if agent_filter:
+                filters["agent"] = agent_filter
+            if category_filter:
+                filters["category"] = category_filter
+
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+            self.send_header("Cache-Control", "no-cache, no-transform")
+            self.send_header("Connection", "keep-alive")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key")
+            self.send_header("X-Accel-Buffering", "no")
+            self.end_headers()
+
+            q = register_telemetry_subscriber(filters)
+            try:
+                init_data = {
+                    "status": "connected",
+                    "stream": "telemetry",
+                    "filters": filters,
+                    "heartbeat_interval": heartbeat_interval,
+                    "server_time": datetime.now(timezone.utc).isoformat(),
+                }
+                init_frame = f"event: connected\ndata: {json.dumps(init_data)}\n\n"
+                self.wfile.write(init_frame.encode("utf-8"))
+                self.wfile.flush()
+
+                last_heartbeat = time.time()
+                while True:
+                    # Instant socket disconnect check
+                    try:
+                        r, _, _ = select.select([self.connection], [], [], 0)
+                        if r:
+                            peek = self.connection.recv(1, socket.MSG_PEEK)
+                            if not peek:
+                                break
+                    except Exception:
+                        break
+
+                    try:
+                        ev = q.get(timeout=0.2)
+                        ev_name = ev.get("event") or ev.get("event_type") or ev.get("type") or "telemetry"
+                        sse_frame = f"event: {ev_name}\ndata: {json.dumps(ev)}\n\n"
+                        self.wfile.write(sse_frame.encode("utf-8"))
+                        self.wfile.flush()
+                    except queue.Empty:
+                        pass
+
+                    now = time.time()
+                    if now - last_heartbeat >= heartbeat_interval:
+                        hb_data = json.dumps({"heartbeat": True, "status": "alive", "timestamp": now, "iso_timestamp": datetime.now(timezone.utc).isoformat()})
+                        hb_frame = f": keepalive {int(now)}\nevent: ping\ndata: {hb_data}\n\n"
+                        self.wfile.write(hb_frame.encode("utf-8"))
+                        self.wfile.flush()
+                        last_heartbeat = now
+
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, socket.error, OSError):
+                # Client disconnected cleanly
+                pass
+            except Exception:
+                pass
+            finally:
+                unregister_telemetry_subscriber(q)
+            return
         else:
             self._send_json(404, {"error": "not found"})
 
@@ -486,6 +721,7 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             )
             result = router.register_agent(agent)
             self._send_json(200, {"success": True, **result})
+            _fire_webhooks("agent.registered", {"agent_id": agent_id, "name": body.get("name", agent_id), "agent_type": body.get("agent_type", "external"), **result})
             return
 
         if path == "/a2a/unregister":
@@ -498,6 +734,7 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             result = router.unregister_agent(agent_id)
             status = 200 if result["status"] == "unregistered" else 404
             self._send_json(status, {"success": result["status"] == "unregistered", **result})
+            _fire_webhooks("agent.unregistered", {"agent_id": agent_id, **result})
             return
 
         if path == "/a2a/delegate":
@@ -732,6 +969,127 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             _fire_webhooks("agents_cli.playground_stop", result)
             return
 
+        # Waterfall & DCC Governance routes
+        if path == "/waterfall/route":
+            try:
+                from compute_waterfall import ComputeTask, get_compute_waterfall
+                wf = get_compute_waterfall()
+                task = ComputeTask(
+                    task_id=body.get("task_id", "wf-probe"),
+                    task_type=body.get("task_type", "analysis"),
+                    prompt=body.get("prompt", ""),
+                    max_sla_ms=body.get("max_sla_ms", 2000),
+                    max_cost_usd=body.get("max_cost_usd", 1.0),
+                    zero_data_retention=body.get("zero_data_retention", False),
+                    preferred_model=body.get("preferred_model"),
+                    requires_code_execution=body.get("requires_code_execution", False),
+                )
+                decision = wf.route(task)
+                self._send_json(200, {"success": True, "routing": decision.to_dict()})
+                return
+            except Exception as e:
+                self._send_json(500, {"success": False, "error": str(e)})
+                return
+
+        if path == "/waterfall/execute":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            prompt = body.get("prompt", body.get("task", ""))
+            if not prompt:
+                self._send_json(400, {"success": False, "error": "prompt or task is required"})
+                return
+            try:
+                from compute_waterfall import ComputeTask, get_compute_waterfall
+                wf = get_compute_waterfall()
+                task = ComputeTask(
+                    task_id=body.get("task_id", f"wf-{int(time.time()*1000)}"),
+                    task_type=body.get("task_type", "analysis"),
+                    prompt=prompt,
+                    system_prompt=body.get("system_prompt"),
+                    max_sla_ms=body.get("max_sla_ms", 2000),
+                    max_cost_usd=body.get("max_cost_usd", 1.0),
+                    zero_data_retention=body.get("zero_data_retention", False),
+                    preferred_model=body.get("preferred_model"),
+                    requires_code_execution=body.get("requires_code_execution", False),
+                )
+                outcome = wf.execute(task)
+                self._send_json(200, {"success": outcome.success, "outcome": outcome.to_dict()})
+                _fire_webhooks("waterfall.execute", outcome.to_dict())
+                return
+            except Exception as e:
+                self._send_json(500, {"success": False, "error": str(e)})
+                return
+
+        if path == "/dcc/validate":
+            try:
+                from dcc_governance import DCCIntent, DCCScope, DelegationContext, get_dcc_governance
+                gov = get_dcc_governance()
+                p_data = body.get("parent", {})
+                c_data = body.get("child", {})
+
+                parent_ctx = DelegationContext(
+                    agent_id=p_data.get("agent_id", "parent"),
+                    scope=DCCScope(**p_data.get("scope", {})),
+                    intent=DCCIntent(**p_data.get("intent", {"goal": "Parent goal"})),
+                )
+                child_ctx = DelegationContext(
+                    agent_id=c_data.get("agent_id", "child"),
+                    scope=DCCScope(**c_data.get("scope", {})),
+                    intent=DCCIntent(**c_data.get("intent", {"goal": "Child goal"})),
+                )
+                res = gov.validate_delegation(parent_ctx, child_ctx)
+                self._send_json(200, {"success": True, "validation": res.to_dict()})
+                return
+            except Exception as e:
+                self._send_json(500, {"success": False, "error": str(e)})
+                return
+
+        if path == "/dcc/approve":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            req_id = body.get("request_id", "")
+            approver = body.get("approver_id", "operator")
+            sig = body.get("signature_token")
+            notes = body.get("notes", "Approved via API")
+            if not req_id:
+                self._send_json(400, {"success": False, "error": "request_id is required"})
+                return
+            try:
+                from dcc_governance import get_dcc_governance
+                gov = get_dcc_governance()
+                ok, token_or_err = gov.gate.approve_escalation(req_id, approver, sig, notes)
+                status = 200 if ok else 400
+                self._send_json(status, {"success": ok, "token_or_error": token_or_err, "request_id": req_id})
+                _fire_webhooks("dcc.approved", {"request_id": req_id, "approver": approver})
+                return
+            except Exception as e:
+                self._send_json(500, {"success": False, "error": str(e)})
+                return
+
+        if path == "/dcc/reject":
+            if not self._check_auth():
+                self._send_json(401, {"success": False, "error": "Unauthorized"})
+                return
+            req_id = body.get("request_id", "")
+            approver = body.get("approver_id", "operator")
+            reason = body.get("reason", "Rejected via API")
+            if not req_id:
+                self._send_json(400, {"success": False, "error": "request_id is required"})
+                return
+            try:
+                from dcc_governance import get_dcc_governance
+                gov = get_dcc_governance()
+                ok, msg = gov.gate.reject_escalation(req_id, approver, reason)
+                status = 200 if ok else 400
+                self._send_json(status, {"success": ok, "message": msg, "request_id": req_id})
+                _fire_webhooks("dcc.rejected", {"request_id": req_id, "approver": approver, "reason": reason})
+                return
+            except Exception as e:
+                self._send_json(500, {"success": False, "error": str(e)})
+                return
+
         # Webhook routes don't need VertexAI config
         if path == "/webhooks/register":
             if not self._check_auth():
@@ -771,6 +1129,14 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             if not prompt:
                 self._send_json(400, {"success": False, "error": "prompt is required"})
                 return
+
+            broadcast_telemetry({
+                "event": "llm.request",
+                "category": "llm",
+                "provider": provider,
+                "model": model,
+                "prompt_preview": prompt[:120],
+            })
 
             if provider == "openrouter":
                 api_key = os.environ.get("OPENROUTER_API_KEY", "")
@@ -815,13 +1181,30 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
                         choices = res_data.get("choices", [])
                         if choices:
                             content = choices[0].get("message", {}).get("content", "")
+                        usage = res_data.get("usage", {})
+                        broadcast_telemetry({
+                            "event": "llm.token",
+                            "category": "llm",
+                            "provider": "openrouter",
+                            "model": model,
+                            "tokens": len(content.split()),
+                            "content_preview": content[:120],
+                        })
+                        broadcast_telemetry({
+                            "event": "llm.complete",
+                            "category": "llm",
+                            "provider": "openrouter",
+                            "model": model,
+                            "content_length": len(content),
+                            "usage": usage,
+                        })
                         self._send_json(200, {
                             "success": True,
                             "provider": "openrouter",
                             "model": model,
                             "content": content,
                             "raw": res_data,
-                            "usage": res_data.get("usage", {}),
+                            "usage": usage,
                         })
                         return
                 except urllib.error.HTTPError as e:
@@ -852,6 +1235,21 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
                     with urllib.request.urlopen(req, timeout=45) as resp:
                         res_data = json.loads(resp.read().decode("utf-8"))
                         content = res_data.get("message", {}).get("content", "")
+                        broadcast_telemetry({
+                            "event": "llm.token",
+                            "category": "llm",
+                            "provider": "ollama",
+                            "model": ollama_model,
+                            "tokens": len(content.split()),
+                            "content_preview": content[:120],
+                        })
+                        broadcast_telemetry({
+                            "event": "llm.complete",
+                            "category": "llm",
+                            "provider": "ollama",
+                            "model": ollama_model,
+                            "content_length": len(content),
+                        })
                         self._send_json(200, {
                             "success": True,
                             "provider": "ollama",
@@ -888,6 +1286,21 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
                         config=config,
                     )
                     content = resp.text if hasattr(resp, "text") else str(resp)
+                    broadcast_telemetry({
+                        "event": "llm.token",
+                        "category": "llm",
+                        "provider": "vertex_ai",
+                        "model": v_model,
+                        "tokens": len(content.split()),
+                        "content_preview": content[:120],
+                    })
+                    broadcast_telemetry({
+                        "event": "llm.complete",
+                        "category": "llm",
+                        "provider": "vertex_ai",
+                        "model": v_model,
+                        "content_length": len(content),
+                    })
                     self._send_json(200, {
                         "success": True,
                         "provider": "vertex_ai",
@@ -933,11 +1346,16 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"success": True, "recorded": True, "timestamp": time.time()})
             return
 
-        if path == "/loops/trigger" or path.startswith("/loops/trigger/"):
+        if path == "/loops/trigger" or path.startswith("/loops/trigger/") or (path.startswith("/loops/") and path.endswith("/run")):
             if not self._check_auth():
                 self._send_json(401, {"success": False, "error": "Unauthorized"})
                 return
-            target_loop = path.replace("/loops/trigger/", "").strip("/") if path.startswith("/loops/trigger/") else body.get("loop_id", body.get("loop", "recovery_scanning"))
+            if path.startswith("/loops/trigger/"):
+                target_loop = path.replace("/loops/trigger/", "").strip("/")
+            elif path.startswith("/loops/") and path.endswith("/run"):
+                target_loop = path[len("/loops/"): -len("/run")].strip("/")
+            else:
+                target_loop = body.get("loop_id", body.get("loop", "recovery_scanning"))
             dry_run = body.get("dry_run", query_params.get("dry", "1") in ("1", "true", "True"))
             exec_res = None
             try:
@@ -1237,14 +1655,14 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
 
 def run_server(host: str = "0.0.0.0", port: int = 8000) -> None:
     """Start the orchestrator REST API server."""
-    server = HTTPServer((host, port), OrchestratorHandler)
+    server = ThreadingHTTPServer((host, port), OrchestratorHandler)
     fallback_enabled = os.environ.get("ORCHESTRATOR_FALLBACK", "true").lower() in ("true", "1", "yes")
     print(f"Vertex Orchestrator backend running on http://{host}:{port}")
     print(f"  Project: {os.environ.get('GOOGLE_CLOUD_PROJECT', 'NOT SET')}")
     print(f"  Auth: {'ENABLED (ORCHESTRATOR_API_KEY set)' if os.environ.get('ORCHESTRATOR_API_KEY') else 'OPEN (no key set — local dev only)'}")
     print(f"  Fallback: {'ENABLED' if fallback_enabled else 'DISABLED'} (Ollama at 127.0.0.1:11434)")
     print(f"  File access: restricted to {os.environ.get('ORCHESTRATOR_ALLOWED_BASE', '<ConsolidatedDevelopment>')}")
-    print(f"  Endpoints: /health, /fallback/status, /execute, /batch, /providers, /recovery/*, /overseer/*, /culina/*, /cline/execute, /webhooks/*, /a2a/*")
+    print(f"  Endpoints: /health, /fallback/status, /execute, /batch, /providers, /telemetry/stream, /recovery/*, /overseer/*, /culina/*, /cline/execute, /webhooks/*, /a2a/*")
     print(f"  Press Ctrl+C to stop")
     try:
         server.serve_forever()
