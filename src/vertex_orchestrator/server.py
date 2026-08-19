@@ -49,12 +49,18 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import time
 import threading
 import urllib.request
 import urllib.error
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
+
+# Ensure parent directory is in sys.path for standalone script execution
+_src_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _src_dir not in sys.path:
+    sys.path.insert(0, _src_dir)
 
 from vertex_orchestrator.config import OllamaConfig, VertexAIConfig
 from vertex_orchestrator.orchestrator import Orchestrator, TaskType
