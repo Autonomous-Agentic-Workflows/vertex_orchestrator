@@ -67,9 +67,9 @@ class OllamaConfig:
     endpoint: str = "127.0.0.1:11434"
     temperature: float = 0.2
     model_mapping: dict = field(default_factory=lambda: {
-        "analysis": "gemma4:31b",
-        "conversation": "gemma4:26b",
-        "edit": "gemma4:26b",
+        "analysis": "glm-5.2:cloud",
+        "conversation": "glm-5.2:cloud",
+        "edit": "ollama-kb-coder:latest",
     })
 
     def __post_init__(self) -> None:
